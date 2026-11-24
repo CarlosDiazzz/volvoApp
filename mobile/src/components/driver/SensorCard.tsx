@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 
-import { LEVEL_TEXT, type Card } from '../../domain/driver/catalog.ts';
+import { statusOf, type Card } from '../../domain/driver/catalog.ts';
 import type { ViewPref } from '../../domain/driver/appearance.ts';
 import { DriverIcon } from './DriverIcon';
 import { Sparkline } from './Sparkline';
@@ -34,7 +34,7 @@ export function SensorCard({ card, now, height, view, fonts }: { card: Card; now
     <View
       style={[styles.card, compact && styles.cardCompact]}
       accessible
-      accessibilityLabel={`${card.title}. ${LEVEL_TEXT[card.level]}. ${card.value}${card.unit ? ` ${card.unit}` : ''}. ${card.caption}`}
+      accessibilityLabel={`${card.title}. ${statusOf(card)}. ${card.value}${card.unit ? ` ${card.unit}` : ''}. ${card.caption}`}
     >
       <View style={styles.head}>
         <DriverIcon name={card.icon} size={compact ? 20 : 24} color={c.muted} />
@@ -43,7 +43,7 @@ export function SensorCard({ card, now, height, view, fonts }: { card: Card; now
         </Text>
         <View style={[styles.chip, card.level !== 'ok' && { borderColor: `${accent}66` }]}>
           <View style={[styles.chipDot, { backgroundColor: accent }]} />
-          <Text style={[styles.chipText, { color: chipText }]}>{LEVEL_TEXT[card.level]}</Text>
+          <Text style={[styles.chipText, { color: chipText }]}>{statusOf(card)}</Text>
         </View>
       </View>
 

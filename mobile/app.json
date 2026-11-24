@@ -38,7 +38,14 @@
           "motionPermission": "Se usa el movimiento del equipo para medir vibración y enviarla al sistema de telemetría."
         }
       ],
-      "./plugins/withDevCaTrust"
+      "./plugins/withDevCaTrust",
+      [
+        "expo-audio",
+        {
+          "microphonePermission": "Se usa el micrófono solo para medir el nivel de ruido en el modo conductor. El audio no se graba ni se envía: solo se calcula un número.",
+          "recordAudioAndroid": true
+        }
+      ]
     ]
   }
 }

@@ -270,3 +270,74 @@ test('Aviso: el mismo aviso con la misma gravedad no reaparece; si empeora, sí'
   assert.notEqual(alertKeyOf({ id: 'hvac', level: 'warn' }), alertKeyOf({ id: 'doors', level: 'warn' }));
   assert.ok(ALERT_VISIBLE_S >= 4 && ALERT_VISIBLE_S <= 15, 'el aviso debe verse el tiempo suficiente para leerlo');
 });
+
+import { NO_SENSORS, appendPhoneHistory, approxSpl, buildPhoneCards, dbfsOf, ema, rms, type PhoneReadings } from './phone.ts';
+import { statusOf } from './catalog.ts';
+
+const AT = '2026-11-24T20:00:00.000Z';
+const readings = (over: Partial<PhoneReadings> = {}): PhoneReadings => ({
+  vibration: 0.02, gyroDps: 3, magDelta: 4, tiltDeg: 2, pressureHpa: 1013.2, lux: 120, noiseDb: 55, battery: 0.8, at: AT, ...over,
+});
+const ALL = { accel: true, gyro: true, mag: true, baro: true, light: true, motion: true, mic: 'granted' as const };
+
+test('Teléfono: el nivel de sonido sale del PCM (RMS → dBFS → dB estimados)', () => {
+  assert.equal(rms([]), 0);
+  assert.ok(Math.abs(rms([0.5, -0.5, 0.5, -0.5]) - 0.5) < 1e-9);
+  const sine = Array.from({ length: 4800 }, (_, i) => 0.5 * Math.sin((2 * Math.PI * 440 * i) / 48000));
+  assert.ok(Math.abs(rms(sine) - 0.5 / Math.SQRT2) < 1e-3, 'el RMS de una senoide es A/√2');
+  assert.equal(dbfsOf(1), 0);
+  assert.ok(Math.abs(dbfsOf(0.1) - -20) < 1e-9);
+  assert.equal(approxSpl(dbfsOf(0)), 0, 'el silencio total no da dB negativos');
+  assert.equal(approxSpl(0), 100);
+  assert.equal(approxSpl(50), 120, 'tope en 120');
+  assert.equal(ema(null, 40, 0.3), 40);
+  assert.equal(ema(40, 50, 0.5), 45);
+});
+
+test('Teléfono: sin permiso del micrófono la tarjeta de sonido lo dice y no inventa un número', () => {
+  const cards = buildPhoneCards(readings({ noiseDb: null }), {}, { ...ALL, mic: 'denied' });
+  const noise = cards.find((c) => c.id === 'noise')!;
+  assert.equal(noise.level, 'unknown');
+  assert.equal(noise.value, '—');
+  assert.match(noise.caption, /Permite el micrófono/);
+});
+
+test('Teléfono: el ruido de la cabina sube de nivel con los umbrales', () => {
+  const level = (db: number) => buildPhoneCards(readings({ noiseDb: db }), {}, ALL).find((c) => c.id === 'noise')!.level;
+  assert.equal(level(55), 'ok');
+  assert.equal(level(82), 'warn');
+  assert.equal(level(95), 'crit');
+});
+
+test('Teléfono: solo hay tarjetas de los sensores que el equipo tiene', () => {
+  const iphone = buildPhoneCards(readings(), {}, { ...ALL, light: false }).map((c) => c.id);
+  assert.ok(!iphone.includes('light'), 'iOS no expone el sensor de luz');
+  assert.ok(iphone.includes('noise') && iphone.includes('pressure') && iphone.includes('battery'));
+  const bare = buildPhoneCards(readings({ battery: null }), {}, { ...NO_SENSORS, mic: 'unavailable' }).map((c) => c.id);
+  assert.deepEqual(bare, ['noise'], 'sin sensores solo queda el sonido, explicando por qué no hay dato');
+});
+
+test('Teléfono: el estado usa palabras de sensor, no de mantenimiento', () => {
+  const cards = buildPhoneCards(readings({ battery: 0.08, vibration: 0.5 }), {}, ALL);
+  assert.equal(statusOf(cards.find((c) => c.id === 'battery')!), 'Alto');
+  assert.equal(cards.find((c) => c.id === 'battery')!.level, 'crit');
+  assert.equal(statusOf(cards.find((c) => c.id === 'vibration')!), 'Alto');
+  assert.equal(statusOf(cards.find((c) => c.id === 'pressure')!), 'Normal');
+});
+
+test('Teléfono: el imán se declara cerca solo sobre la banda y calibra antes de medir', () => {
+  const magnet = (d: number | null) => buildPhoneCards(readings({ magDelta: d }), {}, ALL).find((c) => c.id === 'magnet')!;
+  assert.equal(magnet(null).level, 'unknown');
+  assert.match(magnet(null).caption, /Calibrando/);
+  assert.equal(magnet(20).caption, 'Sin imán cerca');
+  assert.equal(magnet(300).caption, 'Imán cerca (puerta)');
+});
+
+test('Teléfono: el historial guarda lo numérico y se acota', () => {
+  let h = {};
+  for (let i = 0; i < 400; i++) h = appendPhoneHistory(h, readings({ noiseDb: i, lux: null }));
+  const noise = (h as Record<string, number[]>).noiseDb!;
+  assert.equal(noise.length, 180);
+  assert.equal(noise.at(-1), 399);
+  assert.equal((h as Record<string, number[]>).lux, undefined, 'lo que no se midió no se guarda');
+});

@@ -94,7 +94,7 @@ export function CaptureScreen({ pairing, onUnpair, onDriverMode }: { pairing: Pa
 
           <AppButton label="Desemparejar este celular" onPress={onUnpair} danger />
           <Text style={layout.note}>
-            Cada muestra se cifra en el celular (AES-256-GCM): el puente y el broker no pueden leerla ni alterarla. No se capturan imágenes ni audio.
+            Cada muestra se cifra en el celular (AES-256-GCM): el puente y el broker no pueden leerla ni alterarla. No se capturan imágenes. El micrófono solo se usa en el modo conductor para medir un nivel de ruido: el audio no se graba ni se envía.
           </Text>
         </ScrollView>
       </SafeAreaView>

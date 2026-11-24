@@ -2,7 +2,7 @@ import type { Snapshot, System } from './contract.ts';
 import { trendOf, type Direction, type History } from './history.ts';
 import { AMPS_PER_MODULE, AMPS_PER_ZONE, SIGNALS, type ProfileId } from './simulated.ts';
 /** Iconos que la vista sabe dibujar (la lógica no depende de cómo se dibujan). */
-export type IconName = 'vibration' | 'snowflake' | 'bulb' | 'tank' | 'door' | 'battery' | 'bolt' | 'sensor';
+export type IconName = 'vibration' | 'snowflake' | 'bulb' | 'tank' | 'door' | 'battery' | 'bolt' | 'sensor' | 'mic' | 'gauge' | 'tilt' | 'rotate';
 
 /**
  * Qué ve el conductor: el estado de MANTENIMIENTO de cada componente de carrocería. Cada tarjeta resume la salud
@@ -38,7 +38,12 @@ export interface Card {
   trend?: { points: number[]; domain: [number, number]; direction: Direction; text: string };
   /** Hora (ISO) de la lectura más reciente usada. */
   updatedAt: string | null;
+  /** Texto del estado cuando no es el de mantenimiento (p. ej. «Normal / Elevado / Alto» para un sensor). */
+  statusText?: string;
 }
+
+/** Texto del estado de una tarjeta. */
+export const statusOf = (card: Pick<Card, 'level' | 'statusText'>): string => card.statusText ?? LEVEL_TEXT[card.level];
 
 type CardBody = Omit<Card, 'id' | 'title' | 'icon' | 'updatedAt'>;
 

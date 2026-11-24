@@ -12,26 +12,53 @@ import { isTap } from '../domain/driver/carousel.ts';
 import { CONTROLS_HIDE_AFTER_S, MODE_LABEL, nextMode, resolveMode } from '../domain/driver/appearance.ts';
 import { useDriverPrefs } from '../hooks/useDriverPrefs';
 import { alertsOf, buildCards } from '../domain/driver/catalog.ts';
+import type { Origin, TelemetrySource, Vehicle } from '../domain/driver/contract.ts';
+import { buildPhoneCards } from '../domain/driver/phone.ts';
 import { createSimulatedSource, type ProfileId } from '../domain/driver/simulated.ts';
 import { useDriverTelemetry } from '../hooks/useDriverTelemetry';
+import { usePhoneSensors } from '../hooks/usePhoneSensors';
 
-const NEXT_PROFILE: Record<ProfileId, ProfileId> = { '9800-foraneo': '7800e-biarticulado', '7800e-biarticulado': '9800-foraneo' };
+/** `phone` = los sensores REALES de este teléfono (predeterminado); los otros dos son modelos simulados para la demostración. */
+type DataSource = 'phone' | ProfileId;
+const ORDER: DataSource[] = ['phone', '9800-foraneo', '7800e-biarticulado'];
+
+const PHONE_VEHICLE: Vehicle = { profile: 'phone', label: 'Teléfono', model: 'Sensores del teléfono', service: '—', lengthM: 0, modules: 0 };
+/** Fuente que nunca emite: con el teléfono como origen no corre el simulador (solo se aprovecha el reloj del hook). */
+const IDLE_SOURCE: TelemetrySource = { start: () => () => undefined };
+
+interface Feed {
+  vehicle: Vehicle;
+  busId: string;
+  origin: Origin;
+  online: boolean;
+  cards: ReturnType<typeof buildCards>;
+}
 
 /**
  * Modo conductor (vista para CarPlay): estado de mantenimiento de la carrocería en un carrusel, en horizontal, a pantalla
  * completa y con la pantalla siempre encendida. Los controles (salir, aspecto, ajustes, flechas) están ocultos: un toque los muestra
- * y se esconden solos tras unos segundos. Por ahora con datos simulados en el propio celular: no recibe datos de la flota.
+ * y se esconden solos tras unos segundos. Por defecto muestra los sensores REALES del teléfono (movimiento, giro, campo magnético,
+ * presión, luz, batería y nivel de sonido del micrófono); con ⇄ se pasa a los modelos simulados. Aún no recibe datos de la flota.
  */
 export function DriverScreen({ onExit }: { onExit: () => void }) {
-  const [profile, setProfile] = useState<ProfileId>('9800-foraneo');
+  const [dataSource, setDataSource] = useState<DataSource>('phone');
   const [index, setIndex] = useState(0);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [controls, setControls] = useState(false);
   const [touchedAt, setTouchedAt] = useState(0);
   const [prefs, setPrefs] = useDriverPrefs();
-  const source = useMemo(() => createSimulatedSource({ profile }), [profile]);
+  const simulated = dataSource !== 'phone';
+  const source = useMemo(() => (simulated ? createSimulatedSource({ profile: dataSource }) : IDLE_SOURCE), [simulated, dataSource]);
   const { snapshot, history, now, online } = useDriverTelemetry(source);
-  const cards = useMemo(() => (snapshot ? buildCards(profile, snapshot, history) : []), [profile, snapshot, history]);
+  const phone = usePhoneSensors(!simulated);
+  const feed = useMemo<Feed | null>(() => {
+    if (!simulated) {
+      return { vehicle: PHONE_VEHICLE, busId: 'Este teléfono', origin: 'real', online: true, cards: buildPhoneCards(phone.readings, phone.history, phone.avail) };
+    }
+    if (!snapshot) return null;
+    return { vehicle: snapshot.vehicle, busId: snapshot.busId, origin: snapshot.origin, online, cards: buildCards(dataSource, snapshot, history) };
+  }, [simulated, dataSource, snapshot, history, online, phone.readings, phone.history, phone.avail]);
+  const cards = feed?.cards ?? [];
   const alerts = useMemo(() => alertsOf(cards), [cards]);
 
   useEffect(() => {
@@ -65,14 +92,14 @@ export function DriverScreen({ onExit }: { onExit: () => void }) {
   const switchModel = () => {
     touch();
     setIndex(0);
-    setProfile((p) => NEXT_PROFILE[p]);
+    setDataSource((d) => ORDER[(ORDER.indexOf(d) + 1) % ORDER.length]!);
   };
-  const showControls = controls || !snapshot;
+  const showControls = controls || !feed;
 
   return (
     <DriverColorsContext.Provider value={colors}>
       <SafeAreaView style={styles.root}>
-        {snapshot && (
+        {feed && (
           <View
             style={styles.fill}
             onTouchStart={(e) => {
@@ -100,23 +127,23 @@ export function DriverScreen({ onExit }: { onExit: () => void }) {
         )}
 
         {/* Para lector de pantalla (VoiceOver): un botón que muestra u oculta los controles. */}
-        {snapshot && (
+        {feed && (
           <Pressable accessibilityRole="button" accessibilityLabel="Mostrar u ocultar los controles" onPress={toggleControls} style={styles.a11y} />
         )}
 
-        {!snapshot && (
+        {!feed && (
           <View style={styles.loading}>
             <Text style={styles.loadingText}>Conectando con la unidad…</Text>
           </View>
         )}
 
         <View style={styles.top} pointerEvents="box-none">
-          {snapshot && showControls && (
+          {feed && showControls && (
             <DriverStatusBar
-              vehicle={snapshot.vehicle}
-              busId={snapshot.busId}
-              origin={snapshot.origin}
-              online={online}
+              vehicle={feed.vehicle}
+              busId={feed.busId}
+              origin={feed.origin}
+              online={feed.online}
               now={now}
               fonts={fonts}
               onExit={onExit}
@@ -129,10 +156,10 @@ export function DriverScreen({ onExit }: { onExit: () => void }) {
                 touch();
                 setPrefs({ ...prefs, mode: nextMode(prefs.mode) });
               }}
-              onSwitchModel={snapshot.origin === 'simulated' ? switchModel : undefined}
+              onSwitchModel={switchModel}
             />
           )}
-          {!snapshot && (
+          {!feed && (
             <Pressable accessibilityRole="button" accessibilityLabel="Salir del modo conductor" onPress={onExit} style={styles.exitLoading}>
               <Text style={styles.exitLoadingText}>Salir</Text>
             </Pressable>

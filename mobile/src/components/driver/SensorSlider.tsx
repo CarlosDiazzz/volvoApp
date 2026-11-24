@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { FlatList, Pressable, StyleSheet, View, type LayoutRectangle } from 'react-native';
 
-import { LEVEL_TEXT, type Card } from '../../domain/driver/catalog.ts';
+import { statusOf, type Card } from '../../domain/driver/catalog.ts';
 import type { ViewPref } from '../../domain/driver/appearance.ts';
 import { REPEAT, actualOf, nearestVirtual, recenter, startVirtual } from '../../domain/driver/carousel.ts';
 import { DriverIcon } from './DriverIcon';
@@ -113,7 +113,7 @@ export function SensorSlider({ cards, index, onIndexChange, now, view, fonts, sh
               <Pressable
                 key={card.id}
                 accessibilityRole="button"
-                accessibilityLabel={`${card.title}: ${LEVEL_TEXT[card.level]}`}
+                accessibilityLabel={`${card.title}: ${statusOf(card)}`}
                 accessibilityState={{ selected: i === index }}
                 onPress={() => goDot(i)}
                 style={styles.dotHit}
