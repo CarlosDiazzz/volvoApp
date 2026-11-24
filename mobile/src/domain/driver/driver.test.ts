@@ -260,3 +260,13 @@ test('Carrusel: un deslizamiento no cuenta como toque', () => {
   assert.equal(isTap({ x: 100, y: 100, t: 0 }, { x: 240, y: 104, t: 150 }), false, 'se movió: es un swipe');
   assert.equal(isTap({ x: 100, y: 100, t: 0 }, { x: 101, y: 100, t: 900 }), false, 'pulsación larga');
 });
+
+import { ALERT_VISIBLE_S, alertKeyOf } from './appearance.ts';
+
+test('Aviso: el mismo aviso con la misma gravedad no reaparece; si empeora, sí', () => {
+  assert.equal(alertKeyOf(undefined), null);
+  assert.equal(alertKeyOf({ id: 'hvac', level: 'warn' }), alertKeyOf({ id: 'hvac', level: 'warn' }));
+  assert.notEqual(alertKeyOf({ id: 'hvac', level: 'warn' }), alertKeyOf({ id: 'hvac', level: 'crit' }));
+  assert.notEqual(alertKeyOf({ id: 'hvac', level: 'warn' }), alertKeyOf({ id: 'doors', level: 'warn' }));
+  assert.ok(ALERT_VISIBLE_S >= 4 && ALERT_VISIBLE_S <= 15, 'el aviso debe verse el tiempo suficiente para leerlo');
+});

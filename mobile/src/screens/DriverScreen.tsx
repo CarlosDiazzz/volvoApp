@@ -104,16 +104,6 @@ export function DriverScreen({ onExit }: { onExit: () => void }) {
           <Pressable accessibilityRole="button" accessibilityLabel="Mostrar u ocultar los controles" onPress={toggleControls} style={styles.a11y} />
         )}
 
-        {/* Siempre visible, aunque los controles estén ocultos: el origen de los datos y si hay señal. */}
-        {snapshot && !controls && (
-          <View style={styles.tag} pointerEvents="none">
-            <View style={[styles.led, { backgroundColor: online ? colors.ok : colors.crit }]} />
-            <Text style={[styles.tagText, snapshot.origin === 'simulated' ? { color: colors.warn } : { color: colors.ok }]}>
-              {snapshot.origin === 'simulated' ? 'DATOS SIMULADOS' : 'DATOS REALES'}
-            </Text>
-          </View>
-        )}
-
         {!snapshot && (
           <View style={styles.loading}>
             <Text style={styles.loadingText}>Conectando con la unidad…</Text>
@@ -165,9 +155,6 @@ const makeStyles = (c: DriverColors) =>
     a11y: { position: 'absolute', top: 0, left: 0, width: 44, height: 44 },
     top: { position: 'absolute', top: 0, left: 0, right: 0 },
     banner: { paddingHorizontal: 16, paddingTop: 8 },
-    tag: { position: 'absolute', top: 10, right: 20, flexDirection: 'row', alignItems: 'center', gap: 6, opacity: 0.85 },
-    tagText: { fontSize: 11, fontWeight: '700', letterSpacing: 1 },
-    led: { width: 8, height: 8, borderRadius: 4 },
     loading: { flex: 1, alignItems: 'center', justifyContent: 'center' },
     loadingText: { color: c.muted, fontSize: 20 },
     exitLoading: { alignSelf: 'flex-end', margin: 16, minHeight: 44, minWidth: 64, paddingHorizontal: 12, borderRadius: 22, borderWidth: 1, borderColor: c.lineHi, alignItems: 'center', justifyContent: 'center' },

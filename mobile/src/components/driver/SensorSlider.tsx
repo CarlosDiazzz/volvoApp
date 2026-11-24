@@ -98,7 +98,8 @@ export function SensorSlider({ cards, index, onIndexChange, now, view, fonts, sh
         />
       )}
 
-      {/* Puntos siempre visibles (color = nivel de cada componente); las flechas solo con los controles a la vista. */}
+      {/* Puntos y flechas solo con los controles a la vista: en pantalla completa no queda nada más que el número. */}
+      {showControls && (
       <View style={styles.nav} pointerEvents="box-none">
         {showControls && (
           <Pressable accessibilityRole="button" accessibilityLabel="Componente anterior" onPress={() => step(-1)} style={styles.arrow}>
@@ -134,6 +135,7 @@ export function SensorSlider({ cards, index, onIndexChange, now, view, fonts, sh
           </Pressable>
         )}
       </View>
+      )}
     </View>
   );
 }

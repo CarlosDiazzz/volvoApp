@@ -110,11 +110,11 @@ export const levelChipOf = (c: DriverColors): Record<Level, { bg: string; fg: st
 });
 
 /**
- * Tipografía: la fuente del sistema, que en iOS es San Francisco (SF Pro), sin familia explícita. Los números van en peso fino
- * (Thin/Light) y con cifras tabulares, que es el estilo del reloj y de StandBy del iPhone. En Android se usa Roboto.
+ * Tipografía: la fuente del sistema, que en iOS es San Francisco (SF Pro), sin familia explícita. Los números van en Bold (700) para
+ * que resalten a distancia y con cifras tabulares; el resto del texto en peso medio. En Android se usa Roboto.
  */
 export interface DriverFonts {
-  numeral: { fontWeight: '200' };
-  light: { fontWeight: '300' };
+  numeral: { fontWeight: '700' };
+  light: { fontWeight: '500' };
 }
-export const driverFonts: DriverFonts = { numeral: { fontWeight: '200' }, light: { fontWeight: '300' } };
+export const driverFonts: DriverFonts = { numeral: { fontWeight: '700' }, light: { fontWeight: '500' } };

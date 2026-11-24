@@ -60,3 +60,9 @@ export const nextMode = (m: ModePref): ModePref => (m === 'auto' ? 'light' : m =
 
 /** Segundos que los controles permanecen a la vista tras el último toque. */
 export const CONTROLS_HIDE_AFTER_S = 7;
+
+/** Cuánto permanece a la vista un aviso antes de «caer como una gota». Si el aviso empeora, vuelve a aparecer. */
+export const ALERT_VISIBLE_S = 8;
+
+/** Identifica un aviso y su gravedad: el mismo aviso con la misma gravedad no reaparece tras haberse retirado. */
+export const alertKeyOf = (a: { id: string; level: string } | undefined): string | null => (a ? `${a.id}:${a.level}` : null);
