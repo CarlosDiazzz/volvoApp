@@ -18,12 +18,15 @@ interface Props {
   fonts: DriverFonts;
   onExit: () => void;
   onSettings: () => void;
+  /** Texto del aspecto actual y acción para pasar al siguiente (Automático → Claro → Carbón). */
+  modeLabel: string;
+  onCycleMode: () => void;
   /** Solo con datos simulados: alterna el modelo para la demostración. */
   onSwitchModel?: () => void;
 }
 
 /** Barra superior discreta: marca y unidad a la izquierda; origen de los datos (siempre visible), enlace, hora, ajustes y salida. */
-export function DriverStatusBar({ vehicle, busId, origin, online, now, fonts, onExit, onSettings, onSwitchModel }: Props) {
+export function DriverStatusBar({ vehicle, busId, origin, online, now, fonts, onExit, onSettings, modeLabel, onCycleMode, onSwitchModel }: Props) {
   const c = useDriverColors();
   const styles = useMemo(() => makeStyles(c), [c]);
   return (
@@ -55,8 +58,12 @@ export function DriverStatusBar({ vehicle, busId, origin, online, now, fonts, on
           <Text style={styles.sub}>{online ? 'En línea' : 'Sin señal'}</Text>
         </View>
         <Text style={[styles.clock, fonts.numeral]}>{clock(now)}</Text>
-        <Pressable accessibilityRole="button" accessibilityLabel="Ajustes de pantalla" onPress={onSettings} style={styles.iconButton} hitSlop={6}>
+        <Pressable accessibilityRole="button" accessibilityLabel={`Aspecto: ${modeLabel}. Toca para cambiar`} onPress={onCycleMode} style={styles.modeButton} hitSlop={6}>
           <Text style={styles.iconText}>◐</Text>
+          <Text style={styles.modeText}>{modeLabel}</Text>
+        </Pressable>
+        <Pressable accessibilityRole="button" accessibilityLabel="Ajustes de pantalla" onPress={onSettings} style={styles.iconButton} hitSlop={6}>
+          <Text style={styles.iconText}>⚙</Text>
         </Pressable>
         <Pressable accessibilityRole="button" accessibilityLabel="Salir del modo conductor" onPress={onExit} style={styles.exit}>
           <Text style={styles.exitText}>Salir</Text>
@@ -82,6 +89,8 @@ const makeStyles = (c: DriverColors) =>
     clock: { color: c.text, fontSize: 34, fontVariant: ['tabular-nums'], letterSpacing: -0.5 },
     iconButton: { width: 44, height: 44, borderRadius: 22, borderWidth: 1, borderColor: c.lineHi, alignItems: 'center', justifyContent: 'center' },
     iconText: { color: c.text, fontSize: 20 },
+    modeButton: { minHeight: 44, flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 14, borderRadius: 22, borderWidth: 1, borderColor: c.lineHi },
+    modeText: { color: c.text, fontSize: 14, fontWeight: '500' },
     exit: { minHeight: 44, minWidth: 64, paddingHorizontal: 12, borderRadius: 22, borderWidth: 1, borderColor: c.lineHi, alignItems: 'center', justifyContent: 'center' },
     exitText: { color: c.accent, fontWeight: '600' },
   });

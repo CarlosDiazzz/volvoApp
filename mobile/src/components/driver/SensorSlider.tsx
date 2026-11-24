@@ -11,7 +11,7 @@ import { levelColorOf, useDriverColors, type DriverColors, type DriverFonts } fr
  * Carrusel de componentes: una tarjeta por página. Se cambia deslizando, con las flechas grandes o con los puntos,
  * que llevan el color del nivel de cada componente (el conductor ve de un vistazo cuál requiere atención).
  */
-export function SensorSlider({ cards, index, onIndexChange, now, view, fonts }: { cards: Card[]; index: number; onIndexChange: (i: number) => void; now: number; view: ViewPref; fonts: DriverFonts }) {
+export function SensorSlider({ cards, index, onIndexChange, now, view, fonts, showControls }: { cards: Card[]; index: number; onIndexChange: (i: number) => void; now: number; view: ViewPref; fonts: DriverFonts; showControls: boolean }) {
   const c = useDriverColors();
   const styles = useMemo(() => makeStyles(c), [c]);
   const levelColor = levelColorOf(c);
@@ -25,43 +25,41 @@ export function SensorSlider({ cards, index, onIndexChange, now, view, fonts }: 
   }, [index, box, cards.length]);
 
   return (
-    <View style={styles.root}>
-      <View style={styles.viewport} onLayout={(e) => setBox(e.nativeEvent.layout)}>
-        {box && (
-          <FlatList
-            ref={list}
-            horizontal
-            pagingEnabled
-            data={cards}
-            extraData={now}
-            keyExtractor={(card) => card.id}
-            showsHorizontalScrollIndicator={false}
-            initialScrollIndex={index}
-            getItemLayout={(_, i) => ({ length: box.width, offset: box.width * i, index: i })}
-            onMomentumScrollEnd={(e) => go(Math.round(e.nativeEvent.contentOffset.x / box.width))}
-            renderItem={({ item, index: i }) => (
-              <View
-                style={{ width: box.width, height: box.height, paddingHorizontal: box.width * 0.06, paddingVertical: 6 }}
-                accessibilityLabel={`${i + 1} de ${cards.length}`}
-              >
-                <SensorCard card={item} now={now} height={box.height} view={view} fonts={fonts} />
-              </View>
-            )}
-          />
-        )}
-      </View>
+    <View style={styles.root} onLayout={(e) => setBox(e.nativeEvent.layout)}>
+      {box && (
+        <FlatList
+          ref={list}
+          horizontal
+          pagingEnabled
+          data={cards}
+          extraData={now}
+          keyExtractor={(card) => card.id}
+          showsHorizontalScrollIndicator={false}
+          initialScrollIndex={index}
+          getItemLayout={(_, i) => ({ length: box.width, offset: box.width * i, index: i })}
+          onMomentumScrollEnd={(e) => go(Math.round(e.nativeEvent.contentOffset.x / box.width))}
+          renderItem={({ item, index: i }) => (
+            <View style={{ width: box.width, height: box.height }} accessibilityLabel={`${i + 1} de ${cards.length}`}>
+              <SensorCard card={item} now={now} height={box.height} view={view} fonts={fonts} />
+            </View>
+          )}
+        />
+      )}
 
-      <View style={styles.nav}>
-        <Pressable
-          accessibilityRole="button"
-          accessibilityLabel="Componente anterior"
-          accessibilityState={{ disabled: index === 0 }}
-          disabled={index === 0}
-          onPress={() => go(index - 1)}
-          style={[styles.arrow, index === 0 && styles.disabled]}
-        >
-          <DriverIcon name="left" size={32} color={c.text} />
-        </Pressable>
+      {/* Puntos siempre visibles (color = nivel de cada componente); las flechas solo con los controles a la vista. */}
+      <View style={styles.nav} pointerEvents="box-none">
+        {showControls && (
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="Componente anterior"
+            accessibilityState={{ disabled: index === 0 }}
+            disabled={index === 0}
+            onPress={() => go(index - 1)}
+            style={[styles.arrow, index === 0 && styles.disabled]}
+          >
+            <DriverIcon name="left" size={28} color={c.text} />
+          </Pressable>
+        )}
         <View style={styles.dots}>
           {cards.map((card, i) => (
             <Pressable
@@ -82,16 +80,18 @@ export function SensorSlider({ cards, index, onIndexChange, now, view, fonts }: 
             </Pressable>
           ))}
         </View>
-        <Pressable
-          accessibilityRole="button"
-          accessibilityLabel="Componente siguiente"
-          accessibilityState={{ disabled: index === last }}
-          disabled={index === last}
-          onPress={() => go(index + 1)}
-          style={[styles.arrow, index === last && styles.disabled]}
-        >
-          <DriverIcon name="right" size={32} color={c.text} />
-        </Pressable>
+        {showControls && (
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="Componente siguiente"
+            accessibilityState={{ disabled: index === last }}
+            disabled={index === last}
+            onPress={() => go(index + 1)}
+            style={[styles.arrow, index === last && styles.disabled]}
+          >
+            <DriverIcon name="right" size={28} color={c.text} />
+          </Pressable>
+        )}
       </View>
     </View>
   );
@@ -99,23 +99,13 @@ export function SensorSlider({ cards, index, onIndexChange, now, view, fonts }: 
 
 const makeStyles = (c: DriverColors) =>
   StyleSheet.create({
-  root: { flex: 1, gap: 8 },
-  viewport: { flex: 1 },
-  nav: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 24 },
-  arrow: {
-    width: 72,
-    height: 56,
-    borderRadius: 10,
-    borderWidth: 1,
-    borderColor: c.lineHi,
-    backgroundColor: c.surface,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  disabled: { opacity: 0.35 },
-  dots: { flexDirection: 'row' },
-  // El punto se ve chico, pero el área táctil es de 40 × 56.
-  dotHit: { width: 40, height: 56, alignItems: 'center', justifyContent: 'center' },
-  dot: { width: 12, height: 12, borderRadius: 6 },
-  dotCurrent: { width: 34 },
-});
+    root: { flex: 1 },
+    nav: { position: 'absolute', left: 0, right: 0, bottom: 2, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 16 },
+    arrow: { width: 60, height: 44, borderRadius: 22, borderWidth: 1, borderColor: c.lineHi, backgroundColor: c.surface2, alignItems: 'center', justifyContent: 'center' },
+    disabled: { opacity: 0.35 },
+    dots: { flexDirection: 'row' },
+    // El punto se ve chico, pero el área táctil es de 36 × 44.
+    dotHit: { width: 36, height: 44, alignItems: 'center', justifyContent: 'center' },
+    dot: { width: 8, height: 8, borderRadius: 4 },
+    dotCurrent: { width: 26 },
+  });

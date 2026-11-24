@@ -53,3 +53,9 @@ export function autoHint(at: Date): string {
     ? `Ahora es de día: claro. Pasa a carbón a las ${DARK_FROM_HOUR}:00.`
     : `Ahora es de noche: carbón. Pasa a claro a las ${LIGHT_FROM_HOUR}:00.`;
 }
+
+/** Siguiente aspecto al tocar el botón rápido: Automático → Claro → Carbón → Automático. */
+export const nextMode = (m: ModePref): ModePref => (m === 'auto' ? 'light' : m === 'light' ? 'dark' : 'auto');
+
+/** Segundos que los controles permanecen a la vista tras el último toque. */
+export const CONTROLS_HIDE_AFTER_S = 7;

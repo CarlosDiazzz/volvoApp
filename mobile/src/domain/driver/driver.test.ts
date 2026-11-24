@@ -215,3 +215,11 @@ test('Aspecto: el aviso del modo automático dice a qué hora cambia', () => {
   assert.match(autoHint(new Date(2026, 10, 24, 12)), /19:00/);
   assert.match(autoHint(new Date(2026, 10, 24, 22)), /7:00/);
 });
+
+import { nextMode } from './appearance.ts';
+
+test('Aspecto: el botón rápido recorre automático → claro → carbón → automático', () => {
+  assert.equal(nextMode('auto'), 'light');
+  assert.equal(nextMode('light'), 'dark');
+  assert.equal(nextMode('dark'), 'auto');
+});

@@ -4,7 +4,7 @@ import type { Level } from '../../domain/driver/catalog.ts';
 import type { Mode } from '../../domain/driver/appearance.ts';
 
 /**
- * Dos paletas del modo conductor. «Carbón» es negro cálido profundo (no negro puro: cansa menos y deja ver las sombras);
+ * Dos paletas del modo conductor. «Carbón» es negro puro (#000): en pantallas OLED el píxel se apaga del todo, el número flota sin fondo y no deslumbra de noche;
  * «Claro» es el blanco de Volvo. Los colores de nivel se re-escogen en cada modo para conservar el contraste, no se invierten.
  */
 export interface DriverColors {
@@ -67,11 +67,11 @@ export const carbonColors: DriverColors = {
   accent: '#8fb4e3',
   accentSoft: '#142030',
   accentBorder: '#243a55',
-  bg: '#0a0b0d',
-  surface: '#101215',
-  surface2: '#16191d',
-  line: '#1e2227',
-  lineHi: '#2d333a',
+  bg: '#000000',
+  surface: '#000000',
+  surface2: '#0f1113',
+  line: '#1b1e22',
+  lineHi: '#2a2f35',
   text: '#f4f5f7',
   muted: '#8b929c',
   ok: '#62c68c',
@@ -85,7 +85,7 @@ export const carbonColors: DriverColors = {
   critBorder: '#5a2a25',
   unknown: '#6c727b',
   shadow: '#000000',
-  onAccent: '#0a0b0d',
+  onAccent: '#000000',
 };
 
 export const paletteOf = (mode: Mode): DriverColors => (mode === 'dark' ? carbonColors : lightColors);

@@ -27,12 +27,12 @@ export function SensorCard({ card, now, height, view, fonts }: { card: Card; now
   const accent = levelColorOf(c)[card.level];
   const chip = levelChipOf(c)[card.level];
   // Más grande cuanto menos hay alrededor: en «solo números» el valor llena la tarjeta.
-  const valueSize = Math.max(56, Math.min(minimal ? 240 : 168, height * (minimal ? 0.52 : 0.38)));
+  const valueSize = Math.max(64, Math.min(minimal ? 340 : 230, height * (minimal ? 0.62 : 0.46)));
   const captionColor = card.level === 'warn' ? c.warn : card.level === 'crit' ? c.crit : card.level === 'unknown' ? c.muted : c.text;
 
   return (
     <View
-      style={[styles.card, card.level === 'crit' && styles.cardCrit, compact && styles.cardCompact]}
+      style={[styles.card, compact && styles.cardCompact]}
       accessible
       accessibilityLabel={`${card.title}. ${LEVEL_TEXT[card.level]}. ${card.value}${card.unit ? ` ${card.unit}` : ''}. ${card.caption}`}
     >
@@ -113,9 +113,9 @@ export function SensorCard({ card, now, height, view, fonts }: { card: Card; now
 const makeStyles = (c: DriverColors) =>
   StyleSheet.create({
     // Sin marco ni sombra: la tarjeta es el propio fondo; solo el estado crítico dibuja un borde.
-    card: { flex: 1, backgroundColor: c.surface, borderRadius: 28, borderWidth: 1, borderColor: c.line, paddingHorizontal: 32, paddingVertical: 22, gap: 8 },
-    cardCrit: { borderColor: c.critBorder },
-    cardCompact: { paddingHorizontal: 20, paddingVertical: 12, gap: 4, borderRadius: 22 },
+    // Pantalla completa: sin marco, sin esquinas, sin sombra; el número es la pantalla.
+    card: { flex: 1, backgroundColor: c.bg, paddingHorizontal: 44, paddingTop: 18, paddingBottom: 34, gap: 8 },
+    cardCompact: { paddingHorizontal: 28, paddingTop: 10, paddingBottom: 26, gap: 4 },
     head: { flexDirection: 'row', alignItems: 'center', gap: 10 },
     title: { flex: 1, color: c.muted, fontSize: 15, fontWeight: '500', letterSpacing: 1.6, textTransform: 'uppercase' },
     chip: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 12, paddingVertical: 5, borderRadius: 999 },
