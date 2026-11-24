@@ -1,7 +1,7 @@
 import { activateKeepAwakeAsync, deactivateKeepAwake } from 'expo-keep-awake';
 import * as ScreenOrientation from 'expo-screen-orientation';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Pressable, SafeAreaView, StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { AlertBanner } from '../components/driver/AlertBanner';
 import { DriverStatusBar } from '../components/driver/DriverStatusBar';
@@ -9,8 +9,8 @@ import { SensorSlider } from '../components/driver/SensorSlider';
 import { DisplaySettings } from '../components/driver/DisplaySettings';
 import { DriverColorsContext, driverFonts as fonts, paletteOf, type DriverColors } from '../components/driver/driverTheme';
 import { isTap } from '../domain/driver/carousel.ts';
-import { CONTROLS_HIDE_AFTER_S, MODE_LABEL, nextMode, resolveMode } from '../domain/driver/appearance.ts';
-import { useDriverPrefs } from '../hooks/useDriverPrefs';
+import { CONTROLS_HIDE_AFTER_S, MODE_LABEL, nextMode } from '../domain/driver/appearance.ts';
+import { useAppearance } from '../appearance/AppearanceProvider';
 import { alertsOf, buildCards } from '../domain/driver/catalog.ts';
 import type { Origin, TelemetrySource, Vehicle } from '../domain/driver/contract.ts';
 import { buildPhoneCards } from '../domain/driver/phone.ts';
@@ -46,7 +46,7 @@ export function DriverScreen({ onExit }: { onExit: () => void }) {
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [controls, setControls] = useState(false);
   const [touchedAt, setTouchedAt] = useState(0);
-  const [prefs, setPrefs] = useDriverPrefs();
+  const { prefs, setPrefs, mode, insets } = useAppearance();
   const simulated = dataSource !== 'phone';
   const source = useMemo(() => (simulated ? createSimulatedSource({ profile: dataSource }) : IDLE_SOURCE), [simulated, dataSource]);
   const { snapshot, history, now, online } = useDriverTelemetry(source);
@@ -72,7 +72,7 @@ export function DriverScreen({ onExit }: { onExit: () => void }) {
   }, []);
 
   // Automático: la hora local decide (se reevalúa cada segundo con el reloj de la telemetría).
-  const colors = paletteOf(resolveMode(prefs.mode, new Date(now)));
+  const colors = paletteOf(mode);
   const styles = useMemo(() => makeStyles(colors), [colors]);
 
   const touch = useCallback(() => setTouchedAt(Date.now()), []);
@@ -98,7 +98,7 @@ export function DriverScreen({ onExit }: { onExit: () => void }) {
 
   return (
     <DriverColorsContext.Provider value={colors}>
-      <SafeAreaView style={styles.root}>
+      <View style={styles.root}>
         {feed && (
           <View
             style={styles.fill}
@@ -137,7 +137,7 @@ export function DriverScreen({ onExit }: { onExit: () => void }) {
           </View>
         )}
 
-        <View style={styles.top} pointerEvents="box-none">
+        <View style={[styles.top, { paddingTop: insets.top, paddingLeft: insets.left, paddingRight: insets.right }]} pointerEvents="box-none">
           {feed && showControls && (
             <DriverStatusBar
               vehicle={feed.vehicle}
@@ -170,7 +170,7 @@ export function DriverScreen({ onExit }: { onExit: () => void }) {
         </View>
 
         <DisplaySettings visible={settingsOpen} prefs={prefs} now={now} onChange={setPrefs} onClose={() => setSettingsOpen(false)} />
-      </SafeAreaView>
+      </View>
     </DriverColorsContext.Provider>
   );
 }

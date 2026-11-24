@@ -207,8 +207,9 @@ test('Aspecto: las preferencias guardadas se leen sin confiar en ellas', () => {
   assert.deepEqual(parsePrefs('no es json'), DEFAULT_PREFS);
   assert.deepEqual(parsePrefs('42'), DEFAULT_PREFS);
   assert.deepEqual(parsePrefs('{"mode":"neón","view":"x"}'), DEFAULT_PREFS);
-  assert.deepEqual(parsePrefs('{"mode":"dark","view":"minimal","extra":1}'), { mode: 'dark', view: 'minimal' });
-  assert.deepEqual(parsePrefs(serializePrefs({ mode: 'light', view: 'full' })), { mode: 'light', view: 'full' });
+  assert.deepEqual(parsePrefs('{"mode":"dark","view":"minimal","edges":"wide","extra":1}'), { mode: 'dark', view: 'minimal', edges: 'wide' });
+  assert.deepEqual(parsePrefs('{"mode":"dark","view":"minimal"}'), { mode: 'dark', view: 'minimal', edges: 'normal' }, 'lo guardado antes de existir «bordes» sigue valiendo');
+  assert.deepEqual(parsePrefs(serializePrefs({ mode: 'light', view: 'full', edges: 'wide' })), { mode: 'light', view: 'full', edges: 'wide' });
 });
 
 test('Aspecto: el aviso del modo automático dice a qué hora cambia', () => {
@@ -340,4 +341,66 @@ test('Teléfono: el historial guarda lo numérico y se acota', () => {
   assert.equal(noise.length, 180);
   assert.equal(noise.at(-1), 399);
   assert.equal((h as Record<string, number[]>).lux, undefined, 'lo que no se midió no se guarda');
+});
+
+import { STATE_TEXT, TABS, buildSensorRows } from '../sensorInfo.ts';
+
+test('Sensores: la vista lista todos y dice cuáles viajan al sistema y cuáles solo se ven en el teléfono', () => {
+  const rows = buildSensorRows(readings(), ALL, true);
+  const sent = rows.filter((r) => r.sent).map((r) => r.id);
+  assert.deepEqual(sent, ['vibration', 'magnet', 'light', 'battery'], 'solo los cuatro del contrato viajan cifrados');
+  for (const id of ['noise', 'gyro', 'tilt', 'pressure']) assert.equal(rows.find((r) => r.id === id)!.sent, false, id);
+  assert.equal(rows.length, 8);
+});
+
+test('Sensores: lo que el equipo no tiene se muestra como no disponible, no se oculta', () => {
+  const rows = buildSensorRows(readings({ lux: null }), { ...ALL, light: false }, true);
+  assert.equal(rows.find((r) => r.id === 'light')!.state, 'unavailable');
+  assert.equal(STATE_TEXT.unavailable, 'No disponible');
+});
+
+test('Sensores: el micrófono no se enciende solo y explica cada estado', () => {
+  const noise = (enabled: boolean, mic: PhoneAvailabilityMic, db: number | null) => buildSensorRows(readings({ noiseDb: db }), { ...ALL, mic }, enabled).find((r) => r.id === 'noise')!;
+  assert.equal(noise(false, 'granted', 60).state, 'off');
+  assert.equal(noise(true, 'denied', null).state, 'denied');
+  assert.match(noise(true, 'denied', null).value, /Permite el micrófono/);
+  assert.equal(noise(true, 'pending', null).state, 'pending');
+  assert.equal(noise(true, 'granted', null).state, 'waiting');
+  assert.equal(noise(true, 'granted', 61.4).value, '≈ 61 dB');
+});
+
+test('Sensores: la navegación tiene tres vistas separadas', () => {
+  assert.deepEqual(TABS.map((t) => t.id), ['inicio', 'sensores', 'ajustes']);
+});
+
+type PhoneAvailabilityMic = 'pending' | 'granted' | 'denied' | 'unavailable';
+
+import { MIN_INSETS, WIDE_EXTRA, screenInsets } from '../insets.ts';
+
+test('Bordes: sin muesca igual queda un margen mínimo (esquinas redondeadas)', () => {
+  assert.deepEqual(screenInsets({ top: 0, bottom: 0, left: 0, right: 0 }, 'normal'), MIN_INSETS);
+});
+
+test('Bordes: se respeta lo que reporta el sistema cuando es mayor que el mínimo', () => {
+  const i = screenInsets({ top: 59, bottom: 34, left: 47, right: 47 }, 'normal');
+  assert.deepEqual(i, { top: 59, bottom: 34, left: 47, right: 47 });
+});
+
+test('Bordes: «amplios» suma un margen extra a todo, también al sistema', () => {
+  const raw = { top: 47, bottom: 34, left: 0, right: 0 };
+  const normal = screenInsets(raw, 'normal');
+  const wide = screenInsets(raw, 'wide');
+  assert.equal(wide.top, normal.top + WIDE_EXTRA.top);
+  assert.equal(wide.bottom, normal.bottom + WIDE_EXTRA.bottom);
+  assert.equal(wide.left, MIN_INSETS.left + WIDE_EXTRA.left);
+  assert.ok(wide.right > normal.right);
+});
+
+import { TAB_BAR_GAP, TAB_BAR_HEIGHT, contentBottomSpace } from '../insets.ts';
+
+test('Barra flotante: el contenido deja sitio para que nada quede detrás de ella', () => {
+  const none = contentBottomSpace({ top: 0, bottom: 0, left: 0, right: 0 });
+  const iphone = contentBottomSpace({ top: 59, bottom: 34, left: 0, right: 0 });
+  assert.ok(none >= TAB_BAR_HEIGHT + TAB_BAR_GAP, 'cabe la barra aunque no haya indicador de inicio');
+  assert.equal(iphone - none, 34 - TAB_BAR_GAP, 'con indicador de inicio sube lo que este ocupa');
 });

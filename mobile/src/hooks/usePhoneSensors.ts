@@ -18,7 +18,7 @@ const EMPTY: PhoneReadings = { vibration: null, gyroDps: null, magDelta: null, t
  * batería y micrófono. El micrófono se lee como flujo de audio en memoria: SOLO se calcula el nivel de cada bloque y se descarta;
  * nunca se guarda un archivo ni se envía audio. No se usa ubicación ni cámara.
  */
-export function usePhoneSensors(active: boolean) {
+export function usePhoneSensors(active: boolean, withMic = true) {
   const [avail, setAvail] = useState<PhoneAvailability>(NO_SENSORS);
   const [readings, setReadings] = useState<PhoneReadings>(EMPTY);
   const [history, setHistory] = useState<PhoneHistory>({});
@@ -65,7 +65,7 @@ export function usePhoneSensors(active: boolean) {
 
   // Micrófono: permiso y flujo.
   useEffect(() => {
-    if (!active) return;
+    if (!active || !withMic) return;
     let alive = true;
     (async () => {
       try {
@@ -86,8 +86,9 @@ export function usePhoneSensors(active: boolean) {
         // ya detenido
       }
       live.current.noise = null;
+      micState.current = 'pending';
     };
-  }, [active, stream]);
+  }, [active, withMic, stream]);
 
   // Sensores de movimiento.
   useEffect(() => {

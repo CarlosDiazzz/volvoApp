@@ -59,28 +59,29 @@ export const light: Palette = {
   errorSubtle: '#F8DDDB',
 };
 
+/** Carbón: negro puro de fondo (en OLED el píxel se apaga), tarjetas apenas más claras y texto casi blanco. */
 export const dark: Palette = {
-  bg: '#212121',
-  bgBase: '#1A1A1A',
-  bgVariant: '#333333',
-  text: '#FFFFFF',
-  textSubtle: '#D0D0D0',
-  textSubtlest: '#A9A9A9',
-  textDisabled: '#6B6B6B',
-  border: '#6B6B6B',
-  borderSubtle: '#3D3D3D',
+  bg: '#0B0C0D',
+  bgBase: '#000000',
+  bgVariant: '#16181B',
+  text: '#F4F5F7',
+  textSubtle: '#B4BAC2',
+  textSubtlest: '#8B929C',
+  textDisabled: '#5C626B',
+  border: '#3A4047',
+  borderSubtle: '#1D2126',
   primary: '#FFFFFF',
-  primaryPressed: '#A9A9A9',
-  onPrimary: '#212121',
-  accent: '#61A0E8',
-  accentPressed: '#4781C4',
-  onAccent: '#212121',
-  success: '#6CC17A',
-  warning: '#FFB54D',
-  warningText: '#FFB54D',
-  error: '#FF6B54',
-  onError: '#212121',
-  errorSubtle: '#4C2821',
+  primaryPressed: '#B4BAC2',
+  onPrimary: '#000000',
+  accent: '#8FB4E3',
+  accentPressed: '#6F95C8',
+  onAccent: '#000000',
+  success: '#62C68C',
+  warning: '#F0B43C',
+  warningText: '#F0B43C',
+  error: '#FF6F64',
+  onError: '#000000',
+  errorSubtle: '#2D1512',
 };
 
 /** Archivos de Noto Sans registrados con expo-font (ver App.tsx). */
@@ -115,8 +116,8 @@ export type TypeName = keyof typeof typeScale;
 
 export const space = { 1: 2, 2: 4, 3: 6, 4: 8, 5: 12, 6: 16, 7: 20, 8: 24, 9: 32, 10: 40, 11: 48, 12: 64 } as const;
 
-/** Radios del tema volvo: esquinas casi rectas. */
-export const radius = { sm: 2, md: 4, lg: 8, xl: 20, full: 99 } as const;
+/** Esquinas redondeadas (estilo iOS): botones y barra como cápsulas, tarjetas muy suaves. */
+export const radius = { sm: 8, md: 16, lg: 24, xl: 28, full: 999 } as const;
 
 export const logo = {
   // Volvo Iron Mark: zona de protección = 1/4 de su altura; siempre centrado en su área.

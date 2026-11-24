@@ -36,6 +36,7 @@ export function useCapture(pairing: Pairing, running: boolean, rate: number, doo
   const [sent, setSent] = useState(0); // confirmadas por el puente
   const [queued, setQueued] = useState(0); // pendientes de confirmar
   const [dropped, setDropped] = useState(0); // descartadas por desborde de la cola
+  const [lastAt, setLastAt] = useState<number | null>(null); // hora de la última muestra tomada (para verlo en cualquier vista)
   const [omitted, setOmitted] = useState(0); // no enviadas por la banda muerta (ahorro de energía)
   const [live, setLive] = useState<LiveValues>({ vib: 0, mag: null, lux: null });
   const [fault, setFault] = useState('');
@@ -102,6 +103,7 @@ export function useCapture(pairing: Pairing, running: boolean, rate: number, doo
         const ctr = await counter.next();
         const sample = buildSample(now, { ...readings, battery: batteryLevel.current });
         if (alive && queue.enqueue({ ctr, json: JSON.stringify(encryptSample(pairing, ctr, sample)) })) {
+          setLastAt(now);
           dirty = true;
           refresh();
         }
@@ -150,5 +152,5 @@ export function useCapture(pairing: Pairing, running: boolean, rate: number, doo
     };
   }, [running, pairing, rate, avail, vibration, magnet, lux, batteryLevel]);
 
-  return { ...sensors, ...battery, link, sent, queued, dropped, omitted, live, fault };
+  return { ...sensors, ...battery, link, sent, queued, dropped, omitted, live, fault, lastAt };
 }

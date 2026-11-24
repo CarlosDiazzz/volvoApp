@@ -4,6 +4,7 @@ import { FlatList, Pressable, StyleSheet, View, type LayoutRectangle } from 'rea
 import { statusOf, type Card } from '../../domain/driver/catalog.ts';
 import type { ViewPref } from '../../domain/driver/appearance.ts';
 import { REPEAT, actualOf, nearestVirtual, recenter, startVirtual } from '../../domain/driver/carousel.ts';
+import { useAppearance } from '../../appearance/AppearanceProvider';
 import { DriverIcon } from './DriverIcon';
 import { SensorCard } from './SensorCard';
 import { levelColorOf, useDriverColors, type DriverColors, type DriverFonts } from './driverTheme';
@@ -28,6 +29,7 @@ export function SensorSlider({ cards, index, onIndexChange, now, view, fonts, sh
   showControls: boolean;
 }) {
   const c = useDriverColors();
+  const { insets } = useAppearance();
   const styles = useMemo(() => makeStyles(c), [c]);
   const levelColor = levelColorOf(c);
   const list = useRef<FlatList<Slot>>(null);
@@ -100,7 +102,7 @@ export function SensorSlider({ cards, index, onIndexChange, now, view, fonts, sh
 
       {/* Puntos y flechas solo con los controles a la vista: en pantalla completa no queda nada más que el número. */}
       {showControls && (
-      <View style={styles.nav} pointerEvents="box-none">
+      <View style={[styles.nav, { bottom: Math.max(2, insets.bottom - 8) }]} pointerEvents="box-none">
         {showControls && (
           <Pressable accessibilityRole="button" accessibilityLabel="Componente anterior" onPress={() => step(-1)} style={styles.arrow}>
             <DriverIcon name="left" size={28} color={c.text} />

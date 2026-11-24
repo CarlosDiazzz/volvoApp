@@ -1,5 +1,5 @@
 import { createContext, useContext, useMemo, type ReactNode } from 'react';
-import { useColorScheme, type TextStyle } from 'react-native';
+import type { TextStyle } from 'react-native';
 
 import { brand, dark, fontFiles, light, radius, space, typeScale, type Palette, type TypeName } from './tokens';
 
@@ -31,9 +31,8 @@ function buildType(fontsLoaded: boolean): Record<TypeName, TextStyle> {
 
 const ThemeContext = createContext<Theme | null>(null);
 
-export function ThemeProvider({ fontsLoaded, children }: { fontsLoaded: boolean; children: ReactNode }) {
-  const scheme = useColorScheme();
-  const isDark = scheme === 'dark';
+/** `dark` = Carbón. El aspecto lo decide el usuario (claro / carbón / automático por hora), no el tema del sistema. */
+export function ThemeProvider({ fontsLoaded, dark: isDark, children }: { fontsLoaded: boolean; dark: boolean; children: ReactNode }) {
   const theme = useMemo<Theme>(
     () => ({ dark: isDark, colors: isDark ? dark : light, brand, space, radius, type: buildType(fontsLoaded) }),
     [isDark, fontsLoaded],

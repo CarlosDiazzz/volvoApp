@@ -1,7 +1,8 @@
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import { useRef, useState } from 'react';
-import { SafeAreaView, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 
+import { useAppearance } from '../appearance/AppearanceProvider';
 import { AppButton } from '../components/AppButton';
 import { BrandLogo } from '../components/BrandLogo';
 import { useLayout, useTheme, useThemedStyles, type Theme } from '../theme';
@@ -22,6 +23,13 @@ export function PairingScreen({ error, busy, onPair, onScan, onDriverMode }: Pro
   const handled = useRef(false);
   const theme = useTheme();
   const layout = useLayout();
+  const { insets } = useAppearance();
+  const padding = {
+    paddingTop: Math.max(24, insets.top + 8),
+    paddingBottom: Math.max(24, insets.bottom + 8),
+    paddingLeft: Math.max(24, insets.left + 8),
+    paddingRight: Math.max(24, insets.right + 8),
+  };
   const styles = useThemedStyles(makeStyles);
 
   const startScan = async () => {
@@ -38,8 +46,8 @@ export function PairingScreen({ error, busy, onPair, onScan, onDriverMode }: Pro
   };
 
   return (
-    <SafeAreaView style={layout.root}>
-      <ScrollView contentContainerStyle={layout.content}>
+    <View style={layout.root}>
+      <ScrollView contentContainerStyle={[layout.content, padding]}>
         <View style={styles.hero}>
           <BrandLogo size={96} background={theme.dark ? 'dark' : 'light'} />
         </View>
@@ -96,7 +104,7 @@ export function PairingScreen({ error, busy, onPair, onScan, onDriverMode }: Pro
         <Text style={layout.note}>Estado de mantenimiento de la carrocería para la pantalla del autobús (CarPlay). Por ahora con datos simulados.</Text>
         <AppButton label="Abrir modo conductor" onPress={onDriverMode} />
       </ScrollView>
-    </SafeAreaView>
+    </View>
   );
 }
 
