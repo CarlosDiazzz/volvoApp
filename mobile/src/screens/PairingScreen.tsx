@@ -10,9 +10,10 @@ interface Props {
   busy: boolean;
   onPair: (link: string) => void;
   onScan: (qrText: string) => void;
+  onDriverMode: () => void;
 }
 
-export function PairingScreen({ error, busy, onPair, onScan }: Props) {
+export function PairingScreen({ error, busy, onPair, onScan, onDriverMode }: Props) {
   const [permission, requestPermission] = useCameraPermissions();
   const [scanning, setScanning] = useState(false);
   const [manual, setManual] = useState(false);
@@ -82,6 +83,10 @@ export function PairingScreen({ error, busy, onPair, onScan }: Props) {
             <AppButton label="Emparejar con enlace" onPress={() => onPair(draft)} />
           </>
         )}
+
+        <Text style={layout.subtitle}>Modo conductor</Text>
+        <Text style={layout.note}>Estado de mantenimiento de la carrocería para la pantalla del autobús (CarPlay). Por ahora con datos simulados.</Text>
+        <AppButton label="Abrir modo conductor" onPress={onDriverMode} />
       </ScrollView>
     </SafeAreaView>
   );

@@ -18,7 +18,7 @@ const LINK_LABEL: Record<LinkState, string> = {
   blocked: 'bloqueado temporalmente',
 };
 
-export function CaptureScreen({ pairing, onUnpair }: { pairing: Pairing; onUnpair: () => void }) {
+export function CaptureScreen({ pairing, onUnpair, onDriverMode }: { pairing: Pairing; onUnpair: () => void; onDriverMode: () => void }) {
   const [running, setRunning] = useState(false);
   const [rate, setRate] = useState(1);
   const [door, setDoor] = useState(false);
@@ -70,6 +70,7 @@ export function CaptureScreen({ pairing, onUnpair }: { pairing: Pairing; onUnpai
           ))}
         </View>
 
+        <AppButton label="Abrir modo conductor" onPress={onDriverMode} />
         <AppButton label="Desemparejar este celular" onPress={onUnpair} danger />
         <Text style={layout.note}>
           Cada muestra se cifra en el celular (AES-256-GCM): el puente y el broker no pueden leerla ni alterarla. No se capturan imágenes ni audio.

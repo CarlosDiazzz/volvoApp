@@ -3,12 +3,13 @@
     "name": "Volvo Nodo Sensor",
     "slug": "volvo-sensor-node",
     "version": "1.0.0",
-    "orientation": "portrait",
+    "orientation": "default",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "dark",
     "ios": {
       "supportsTablet": false,
-      "bundleIdentifier": "mx.volvo.hackatec.sensornode"
+      "bundleIdentifier": "mx.volvo.hackatec.sensornode",
+      "requireFullScreen": true
     },
     "android": {
       "adaptiveIcon": {
