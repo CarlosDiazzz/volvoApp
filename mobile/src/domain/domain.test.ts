@@ -5,7 +5,7 @@ import { test } from 'node:test';
 import { BlockCounter, CounterStateError, type KeyValueStore } from './counter.ts';
 import { buildAad, buildNonce, encryptBytes, encryptSample, hexToBytes } from './envelope.ts';
 import { ADAPT_BAND_UT, MagMeter, VibrationMeter, luxToPct } from './measure.ts';
-import { parsePairing } from './pairing.ts';
+import { buildPairingLink, parsePairing, parsePairingQr, parseRedeemed } from './pairing.ts';
 import { buildSample } from './sample.ts';
 
 const vectors = JSON.parse(readFileSync(new URL('../../spec/test-vectors.json', import.meta.url), 'utf8'));
@@ -111,4 +111,24 @@ test('buildSample respeta rangos del contrato', () => {
     { ts: 5, light_pct: 100, vib_rms: 0.1235, mag_delta: 0, noise_db: 140, door_manual: false, battery_pct: 50 },
   );
   assert.deepEqual(buildSample(6, { light: null, battery: -1 }), { ts: 6 });
+});
+
+test('parsePairingQr acepta solo el formato del tablero y nunca claves', () => {
+  const code = 'A'.repeat(32);
+  assert.deepEqual(parsePairingQr(`volvopair://10.35.11.211:8444/${code}`), { host: '10.35.11.211:8444', code });
+  assert.deepEqual(parsePairingQr(` volvopair://laptop.local:8444/${code} \n`), { host: 'laptop.local:8444', code });
+  for (const bad of ['', 'https://x/' + code, `volvopair://h/${code}x`, 'volvopair://h/corto', `volvopair://h:99999999/${code}`, `volvopair://h@evil.com/${code}`, `volvopair://h/${code}/../x`]) {
+    assert.equal(parsePairingQr(bad), null, bad);
+  }
+});
+
+test('parseRedeemed valida estrictamente la respuesta del servidor y arma el enlace histórico', () => {
+  const good = { device: 'phone-2', bus: 'BUS-7700', keyHex: 'a'.repeat(64), noncePrefixHex: 'b'.repeat(8), token: 'c'.repeat(48), bridgePort: 8443 };
+  assert.deepEqual(parseRedeemed(good), good);
+  for (const bad of [null, 'x', {}, { ...good, keyHex: 'zz' }, { ...good, device: 'Phone 2' }, { ...good, bridgePort: 0 }, { ...good, bridgePort: '8443' }, { ...good, token: 'x' }]) {
+    assert.equal(parseRedeemed(bad), null);
+  }
+  const link = buildPairingLink('10.35.11.211:8444', good);
+  assert.equal(link, `https://10.35.11.211:8443/#d=phone-2&b=BUS-7700&k=${'a'.repeat(64)}&n=${'b'.repeat(8)}&t=${'c'.repeat(48)}`);
+  assert.deepEqual(parsePairing(link)?.host, '10.35.11.211:8443'); // el puente usa su propio puerto, no el del tablero
 });

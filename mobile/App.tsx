@@ -5,13 +5,13 @@ import { PairingScreen } from './src/screens/PairingScreen';
 import { usePairing } from './src/hooks/usePairing';
 
 export default function App() {
-  const { pairing, loading, error, pair, unpair } = usePairing();
+  const { pairing, loading, error, busy, pair, pairFromQr, unpair } = usePairing();
   return (
     <>
       {loading ? null : pairing ? (
         <CaptureScreen pairing={pairing} onUnpair={unpair} />
       ) : (
-        <PairingScreen error={error} onPair={pair} />
+        <PairingScreen error={error} busy={busy} onPair={pair} onScan={pairFromQr} />
       )}
       <StatusBar style="light" />
     </>

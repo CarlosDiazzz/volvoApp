@@ -26,6 +26,12 @@
     "plugins": [
       "expo-secure-store",
       [
+        "expo-camera",
+        {
+          "cameraPermission": "Se usa la cámara solo para escanear el código QR de emparejamiento."
+        }
+      ],
+      [
         "expo-sensors",
         {
           "motionPermission": "Se usa el movimiento del equipo para medir vibración y enviarla al sistema de telemetría."
