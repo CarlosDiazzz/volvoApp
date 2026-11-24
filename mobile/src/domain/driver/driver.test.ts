@@ -395,3 +395,12 @@ test('Bordes: «amplios» suma un margen extra a todo, también al sistema', () 
   assert.equal(wide.left, MIN_INSETS.left + WIDE_EXTRA.left);
   assert.ok(wide.right > normal.right);
 });
+
+import { TAB_BAR_GAP, TAB_BAR_HEIGHT, contentBottomSpace } from '../insets.ts';
+
+test('Barra flotante: el contenido deja sitio para que nada quede detrás de ella', () => {
+  const none = contentBottomSpace({ top: 0, bottom: 0, left: 0, right: 0 });
+  const iphone = contentBottomSpace({ top: 59, bottom: 34, left: 0, right: 0 });
+  assert.ok(none >= TAB_BAR_HEIGHT + TAB_BAR_GAP, 'cabe la barra aunque no haya indicador de inicio');
+  assert.equal(iphone - none, 34 - TAB_BAR_GAP, 'con indicador de inicio sube lo que este ocupa');
+});

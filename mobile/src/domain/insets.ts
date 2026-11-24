@@ -21,3 +21,10 @@ export function screenInsets(raw: Insets, edges: EdgesPref): Insets {
   const side = (k: keyof Insets) => Math.max(raw[k] + extra[k], MIN_INSETS[k] + extra[k]);
   return { top: side('top'), bottom: side('bottom'), left: side('left'), right: side('right') };
 }
+
+/** Altura de la barra flotante de navegación y espacio que deja libre el contenido para no quedar detrás de ella. */
+export const TAB_BAR_HEIGHT = 64;
+export const TAB_BAR_GAP = 12; // separación entre la barra y el borde inferior (o el indicador de inicio)
+export function contentBottomSpace(insets: Insets): number {
+  return TAB_BAR_HEIGHT + Math.max(insets.bottom, TAB_BAR_GAP) + TAB_BAR_GAP + 16;
+}

@@ -116,8 +116,8 @@ export type TypeName = keyof typeof typeScale;
 
 export const space = { 1: 2, 2: 4, 3: 6, 4: 8, 5: 12, 6: 16, 7: 20, 8: 24, 9: 32, 10: 40, 11: 48, 12: 64 } as const;
 
-/** Radios del tema volvo: esquinas casi rectas. */
-export const radius = { sm: 2, md: 4, lg: 8, xl: 20, full: 99 } as const;
+/** Esquinas redondeadas (estilo iOS): botones y barra como cápsulas, tarjetas muy suaves. */
+export const radius = { sm: 8, md: 16, lg: 24, xl: 28, full: 999 } as const;
 
 export const logo = {
   // Volvo Iron Mark: zona de protección = 1/4 de su altura; siempre centrado en su área.

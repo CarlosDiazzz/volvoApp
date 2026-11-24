@@ -19,7 +19,7 @@ const makeStyles = (t: Theme) =>
       backgroundColor: t.colors.bg,
       borderColor: t.colors.borderSubtle,
       borderWidth: StyleSheet.hairlineWidth,
-      borderRadius: t.radius.lg,
+      borderRadius: t.radius.xl,
       padding: t.space[6],
       gap: t.space[4],
     },
