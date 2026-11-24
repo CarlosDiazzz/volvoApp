@@ -3,16 +3,18 @@ import { Alert, ScrollView, Text, View } from 'react-native';
 import { AppButton } from '../components/AppButton';
 import { Card } from '../components/Card';
 import { InfoRow } from '../components/InfoRow';
-import { MODE_LABEL, VIEW_LABEL, type ModePref, type ViewPref } from '../domain/driver/appearance.ts';
-import { useDriverPrefs } from '../hooks/useDriverPrefs';
+import { useAppearance } from '../appearance/AppearanceProvider';
+import { EDGES_LABEL, MODE_LABEL, VIEW_LABEL, type EdgesPref, type ModePref, type ViewPref } from '../domain/driver/appearance.ts';
 import { RATES, useSession } from '../session/CaptureSession';
+import { useContentPadding } from '../appearance/useContentPadding';
 import { useLayout } from '../theme';
 
 /** Ajustes de la app: envío, aspecto del modo conductor, emparejamiento y privacidad. Nada de sensores aquí (tienen su vista). */
 export function AjustesView({ onUnpair }: { onUnpair: () => void }) {
   const layout = useLayout();
+  const padding = useContentPadding();
   const { pairing, rate, setRate, saver, setSaver } = useSession();
-  const [prefs, setPrefs] = useDriverPrefs();
+  const { prefs, setPrefs, mode } = useAppearance();
 
   const confirmUnpair = () =>
     Alert.alert(
@@ -25,7 +27,7 @@ export function AjustesView({ onUnpair }: { onUnpair: () => void }) {
     );
 
   return (
-    <ScrollView contentContainerStyle={layout.content}>
+    <ScrollView contentContainerStyle={[layout.content, padding]}>
       <Text style={layout.title}>Ajustes</Text>
 
       <Card title="Envío de datos">
@@ -42,20 +44,33 @@ export function AjustesView({ onUnpair }: { onUnpair: () => void }) {
         </Text>
       </Card>
 
-      <Card title="Modo conductor">
-        <Text style={layout.subtitle}>Aspecto</Text>
+      <Card title="Apariencia">
+        <Text style={layout.subtitle}>Aspecto de toda la app</Text>
         <View style={layout.rowButtons}>
           {(Object.keys(MODE_LABEL) as ModePref[]).map((m) => (
             <AppButton key={m} label={MODE_LABEL[m]} onPress={() => setPrefs({ ...prefs, mode: m })} selected={prefs.mode === m} />
           ))}
         </View>
+        <Text style={layout.note}>
+          Carbón es negro puro; Claro es el blanco de Volvo. Automático usa claro de 7:00 a 19:00 y carbón el resto (ahora: {mode === 'dark' ? 'carbón' : 'claro'}).
+        </Text>
+        <Text style={layout.subtitle}>Márgenes de pantalla</Text>
+        <View style={layout.rowButtons}>
+          {(Object.keys(EDGES_LABEL) as EdgesPref[]).map((e) => (
+            <AppButton key={e} label={EDGES_LABEL[e]} onPress={() => setPrefs({ ...prefs, edges: e })} selected={prefs.edges === e} />
+          ))}
+        </View>
+        <Text style={layout.note}>Si tu pantalla tiene esquinas o bordes muy curvos y algo queda cortado, elige «Amplios»: suma un margen extra en toda la app.</Text>
+      </Card>
+
+      <Card title="Modo conductor">
         <Text style={layout.subtitle}>Información</Text>
         <View style={layout.rowButtons}>
           {(Object.keys(VIEW_LABEL) as ViewPref[]).map((v) => (
             <AppButton key={v} label={VIEW_LABEL[v]} onPress={() => setPrefs({ ...prefs, view: v })} selected={prefs.view === v} />
           ))}
         </View>
-        <Text style={layout.note}>También se cambian dentro del modo conductor (un toque, ◐ y ⚙). Automático: claro de 7:00 a 19:00 y carbón el resto.</Text>
+        <Text style={layout.note}>«Solo números» muestra únicamente el valor grande; «Detallada» añade medidor, estados y gráfica de tendencia. También se cambia dentro del modo conductor (un toque y ⚙).</Text>
       </Card>
 
       <Card title="Emparejamiento">

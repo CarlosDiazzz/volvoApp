@@ -75,7 +75,7 @@ export function DriverStatusBar({ vehicle, busId, origin, online, now, fonts, on
 
 const makeStyles = (c: DriverColors) =>
   StyleSheet.create({
-    bar: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 12, paddingHorizontal: 22, paddingVertical: 8, backgroundColor: c.bg },
+    bar: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 12, paddingHorizontal: 8, paddingVertical: 8, backgroundColor: c.bg },
     brand: { flexDirection: 'row', alignItems: 'center', gap: 14, flexShrink: 1 },
     logo: { width: 40, height: 40 },
     title: { color: c.text, fontSize: 15, fontWeight: '500' },

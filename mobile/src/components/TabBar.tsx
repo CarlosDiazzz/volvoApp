@@ -1,13 +1,17 @@
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
+import { useAppearance } from '../appearance/AppearanceProvider';
 import { TABS, type TabId } from '../domain/sensorInfo';
 import { useThemedStyles, type Theme } from '../theme';
 
 /** Barra inferior: tres vistas separadas y, aparte, el acceso al modo conductor. */
 export function TabBar({ tab, onTab, onDriverMode }: { tab: TabId; onTab: (t: TabId) => void; onDriverMode: () => void }) {
   const styles = useThemedStyles(makeStyles);
+  const { insets } = useAppearance();
+  // Dentro de la zona segura: el indicador de inicio abajo y las esquinas curvas a los lados.
+  const safe = { paddingBottom: insets.bottom, paddingLeft: Math.max(16, insets.left), paddingRight: Math.max(16, insets.right) };
   return (
-    <View style={styles.bar} accessibilityRole="tablist">
+    <View style={[styles.bar, safe]} accessibilityRole="tablist">
       {TABS.map((t) => (
         <Pressable
           key={t.id}

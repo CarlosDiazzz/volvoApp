@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react';
 import { ScrollView, Text, View } from 'react-native';
 
 import { AppButton } from '../components/AppButton';
@@ -5,6 +6,7 @@ import { Card } from '../components/Card';
 import { InfoRow } from '../components/InfoRow';
 import type { LinkState } from '../services/link';
 import { useSession } from '../session/CaptureSession';
+import { useContentPadding } from '../appearance/useContentPadding';
 import { useLayout } from '../theme';
 
 const LINK_LABEL: Record<LinkState, string> = {
@@ -18,11 +20,20 @@ const LINK_LABEL: Record<LinkState, string> = {
 /** Inicio: solo lo esencial del envío (¿está enviando?, ¿llega todo?). Sensores y Ajustes tienen su propia vista. */
 export function InicioView({ onSensors }: { onSensors: () => void }) {
   const layout = useLayout();
+  const padding = useContentPadding();
   const { pairing, capture: c, running, setRunning, saver } = useSession();
   const sending = running && c.link === 'ready';
+  // Para ver que se está tomando y enviando sin importar la vista: reloj de 1 s para «hace N s».
+  const [now, setNow] = useState(() => Date.now());
+  useEffect(() => {
+    if (!running) return;
+    const t = setInterval(() => setNow(Date.now()), 1000);
+    return () => clearInterval(t);
+  }, [running]);
+  const age = c.lastAt == null ? null : Math.max(0, Math.round((now - c.lastAt) / 1000));
 
   return (
-    <ScrollView contentContainerStyle={layout.content}>
+    <ScrollView contentContainerStyle={[layout.content, padding]}>
       <Text style={layout.title}>Nodo sensor</Text>
       <Text style={layout.note}>
         {pairing.device} · autobús {pairing.bus}. Envía sensado cifrado; no tiene acceso a datos de flota.
@@ -40,6 +51,16 @@ export function InicioView({ onSensors }: { onSensors: () => void }) {
         {!!c.fault && <Text style={layout.error}>{c.fault}</Text>}
         <AppButton label={running ? 'Detener envío' : 'Iniciar envío'} onPress={() => setRunning((r) => !r)} danger={running} />
       </Card>
+
+      {running && (
+        <Card title="Lo que se está enviando">
+          <InfoRow label="Última muestra" value={age == null ? 'esperando…' : age < 2 ? 'ahora' : `hace ${age} s`} good={age != null && age < 5} />
+          <InfoRow label="Vibración" value={c.avail.accel ? `${c.live.vib.toFixed(3)} g` : 'no disponible'} />
+          <InfoRow label="Campo magnético" value={!c.avail.mag ? 'no disponible' : c.live.mag == null ? 'calibrando…' : `${c.live.mag.toFixed(0)} µT`} />
+          <InfoRow label="Luz" value={c.avail.light ? `${Math.round(c.live.lux ?? 0)} lx` : 'no disponible'} />
+          <Text style={layout.note}>Se envía desde cualquier vista de la app; no hace falta estar en Sensores.</Text>
+        </Card>
+      )}
 
       <Card title="Teléfono">
         <InfoRow label="Batería" value={c.stats && c.stats.now >= 0 ? `${Math.round(c.stats.now * 100)} %` : 'n/d'} />

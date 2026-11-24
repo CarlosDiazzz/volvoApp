@@ -3,6 +3,7 @@ import { StyleSheet, Text, View } from 'react-native';
 
 import { statusOf, type Card } from '../../domain/driver/catalog.ts';
 import type { ViewPref } from '../../domain/driver/appearance.ts';
+import { useAppearance } from '../../appearance/AppearanceProvider';
 import { DriverIcon } from './DriverIcon';
 import { Sparkline } from './Sparkline';
 import { levelColorOf, useDriverColors, type DriverColors, type DriverFonts } from './driverTheme';
@@ -21,6 +22,7 @@ export function formatAge(iso: string | null, now: number): string {
  */
 export function SensorCard({ card, now, height, view, fonts }: { card: Card; now: number; height: number; view: ViewPref; fonts: DriverFonts }) {
   const c = useDriverColors();
+  const { insets } = useAppearance();
   const styles = useMemo(() => makeStyles(c), [c]);
   const minimal = view === 'minimal';
   const compact = height < 300;
@@ -32,7 +34,12 @@ export function SensorCard({ card, now, height, view, fonts }: { card: Card; now
 
   return (
     <View
-      style={[styles.card, compact && styles.cardCompact]}
+      style={[
+        styles.card,
+        compact && styles.cardCompact,
+        // El borde curvo recorta lo que queda cerca: el contenido respeta la zona segura de cada lado y la de abajo (puntos y barra).
+        { paddingLeft: Math.max(compact ? 28 : 44, insets.left + 20), paddingRight: Math.max(compact ? 28 : 44, insets.right + 20), paddingBottom: Math.max(compact ? 26 : 34, insets.bottom + 18) },
+      ]}
       accessible
       accessibilityLabel={`${card.title}. ${statusOf(card)}. ${card.value}${card.unit ? ` ${card.unit}` : ''}. ${card.caption}`}
     >
@@ -114,8 +121,8 @@ const makeStyles = (c: DriverColors) =>
   StyleSheet.create({
     // Sin marco ni sombra: la tarjeta es el propio fondo; solo el estado crítico dibuja un borde.
     // Pantalla completa: sin marco, sin esquinas, sin sombra; el número es la pantalla.
-    card: { flex: 1, backgroundColor: c.bg, paddingHorizontal: 44, paddingTop: 18, paddingBottom: 34, gap: 8 },
-    cardCompact: { paddingHorizontal: 28, paddingTop: 10, paddingBottom: 26, gap: 4 },
+    card: { flex: 1, backgroundColor: c.bg, paddingTop: 18, gap: 8 },
+    cardCompact: { paddingTop: 10, gap: 4 },
     head: { flexDirection: 'row', alignItems: 'center', gap: 10 },
     title: { flex: 1, color: c.muted, fontSize: 15, fontWeight: '700', letterSpacing: 1.6, textTransform: 'uppercase' },
     // Estado sobrio: un punto y una palabra; solo los avisos llevan un borde fino del color del nivel.

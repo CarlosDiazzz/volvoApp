@@ -12,9 +12,13 @@ import { HomeShell } from './src/views/HomeShell';
 import { DriverScreen } from './src/screens/DriverScreen';
 import { PairingScreen } from './src/screens/PairingScreen';
 import { usePairing } from './src/hooks/usePairing';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
+
+import { AppearanceProvider, useAppearance } from './src/appearance/AppearanceProvider';
 import { ThemeProvider } from './src/theme';
 
-export default function App() {
+function Root() {
+  const { mode } = useAppearance();
   const { pairing, loading, error, busy, pair, pairFromQr, unpair } = usePairing();
   const [driver, setDriver] = useState(false);
   // Noto Sans es el fallback oficial de Volvo Novum. Mientras carga, el texto usa la fuente del sistema.
@@ -26,7 +30,7 @@ export default function App() {
   }, []);
 
   return (
-    <ThemeProvider fontsLoaded={fontsLoaded}>
+    <ThemeProvider fontsLoaded={fontsLoaded} dark={mode === 'dark'}>
       {/* La captura NO se desmonta al abrir el modo conductor: se oculta. Así el nodo sigue enviando (y la cola y el enlace siguen vivos). */}
       <View style={driver ? styles.hidden : styles.fill}>
         {loading ? null : pairing ? (
@@ -47,3 +51,13 @@ const styles = StyleSheet.create({
   fill: { flex: 1 },
   hidden: { display: 'none' },
 });
+
+export default function App() {
+  return (
+    <SafeAreaProvider>
+      <AppearanceProvider>
+        <Root />
+      </AppearanceProvider>
+    </SafeAreaProvider>
+  );
+}

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { SafeAreaView, StyleSheet, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 
 import { BrandHeader } from '../components/BrandHeader';
 import { TabBar } from '../components/TabBar';
@@ -16,12 +16,12 @@ export function HomeShell({ onDriverMode, onUnpair, hidden }: { onDriverMode: ()
   return (
     <View style={layout.root}>
       <BrandHeader />
-      <SafeAreaView style={styles.body}>
+      <View style={styles.body}>
         {tab === 'inicio' && <InicioView onSensors={() => setTab('sensores')} />}
         {/* Los sensores solo se suscriben mientras su vista está a la vista (y el modo conductor cerrado). */}
         {tab === 'sensores' && <SensoresView active={!hidden} />}
         {tab === 'ajustes' && <AjustesView onUnpair={onUnpair} />}
-      </SafeAreaView>
+      </View>
       <TabBar tab={tab} onTab={setTab} onDriverMode={onDriverMode} />
     </View>
   );

@@ -5,13 +5,17 @@ export type Mode = 'light' | 'dark';
 /** `minimal`: solo el número grande (estilo StandBy). `full`: además medidor, estados, detalle y gráfica de tendencia. */
 export type ViewPref = 'full' | 'minimal';
 
+/** Márgenes: `normal` usa las zonas seguras del sistema; `wide` suma un margen extra para pantallas con esquinas o bordes muy curvos. */
+export type EdgesPref = 'normal' | 'wide';
+
 export interface DriverPrefs {
   mode: ModePref;
   view: ViewPref;
+  edges: EdgesPref;
 }
 
 /** Por defecto, solo números: las gráficas y el detalle aparecen si el usuario pide información más detallada en los ajustes. */
-export const DEFAULT_PREFS: DriverPrefs = { mode: 'auto', view: 'minimal' };
+export const DEFAULT_PREFS: DriverPrefs = { mode: 'auto', view: 'minimal', edges: 'normal' };
 
 /** Automático: claro de día, carbón de noche, según la hora LOCAL del teléfono. */
 export const LIGHT_FROM_HOUR = 7;
@@ -25,6 +29,7 @@ export function resolveMode(pref: ModePref, at: Date): Mode {
 
 const MODES: readonly ModePref[] = ['auto', 'light', 'dark'];
 const VIEWS: readonly ViewPref[] = ['full', 'minimal'];
+const EDGES: readonly EdgesPref[] = ['normal', 'wide'];
 
 /** Lee lo guardado sin confiar en ello: cualquier valor raro vuelve al valor por defecto. */
 export function parsePrefs(raw: string | null | undefined): DriverPrefs {
@@ -36,15 +41,17 @@ export function parsePrefs(raw: string | null | undefined): DriverPrefs {
     return {
       mode: MODES.includes(o.mode as ModePref) ? (o.mode as ModePref) : DEFAULT_PREFS.mode,
       view: VIEWS.includes(o.view as ViewPref) ? (o.view as ViewPref) : DEFAULT_PREFS.view,
+      edges: EDGES.includes(o.edges as EdgesPref) ? (o.edges as EdgesPref) : DEFAULT_PREFS.edges,
     };
   } catch {
     return DEFAULT_PREFS;
   }
 }
 
-export const serializePrefs = (p: DriverPrefs): string => JSON.stringify({ mode: p.mode, view: p.view });
+export const serializePrefs = (p: DriverPrefs): string => JSON.stringify({ mode: p.mode, view: p.view, edges: p.edges });
 
 export const MODE_LABEL: Record<ModePref, string> = { auto: 'Automático', light: 'Claro', dark: 'Carbón' };
+export const EDGES_LABEL: Record<EdgesPref, string> = { normal: 'Normal', wide: 'Amplios' };
 export const VIEW_LABEL: Record<ViewPref, string> = { minimal: 'Solo números', full: 'Detallada' };
 
 /** Texto que explica qué hará el modo automático ahora mismo. */

@@ -38,7 +38,16 @@ export function useSensors(active: boolean) {
       LightSensor.setUpdateInterval(500);
       subs.push(LightSensor.addListener(({ illuminance }) => (lux.current = illuminance)));
     }
-    return () => subs.forEach((s) => s.remove());
+    // Sin línea base el campo magnético no puede decir «imán cerca»: se calibra solo los primeros 2 s si todavía no se hizo.
+    let auto: ReturnType<typeof setTimeout> | null = null;
+    if (magnet.current.baseline === null) {
+      magnet.current.startCalibration();
+      auto = setTimeout(() => magnet.current.finishCalibration(), CALIBRATION_MS);
+    }
+    return () => {
+      if (auto) clearTimeout(auto);
+      subs.forEach((s) => s.remove());
+    };
   }, [active, avail.light]);
 
   const calibrate = useCallback(() => {

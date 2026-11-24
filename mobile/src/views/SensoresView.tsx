@@ -6,11 +6,13 @@ import { Card } from '../components/Card';
 import { buildSensorRows, STATE_TEXT } from '../domain/sensorInfo';
 import { usePhoneSensors } from '../hooks/usePhoneSensors';
 import { useSession } from '../session/CaptureSession';
+import { useContentPadding } from '../appearance/useContentPadding';
 import { useLayout, useThemedStyles, type Theme } from '../theme';
 
 /** Sensores: qué mide el teléfono ahora, para qué sirve y si viaja al sistema. El micrófono se activa a mano. */
 export function SensoresView({ active }: { active: boolean }) {
   const layout = useLayout();
+  const padding = useContentPadding();
   const styles = useThemedStyles(makeStyles);
   const { capture: c, running, door, setDoor } = useSession();
   const [micOn, setMicOn] = useState(false);
@@ -18,7 +20,7 @@ export function SensoresView({ active }: { active: boolean }) {
   const rows = buildSensorRows(readings, avail, micOn);
 
   return (
-    <ScrollView contentContainerStyle={layout.content}>
+    <ScrollView contentContainerStyle={[layout.content, padding]}>
       <Text style={layout.title}>Sensores</Text>
       <Text style={layout.note}>Lo que mide este teléfono en este momento. «Se envía» significa que el valor viaja cifrado al sistema; los demás solo se ven aquí y en el modo conductor.</Text>
 

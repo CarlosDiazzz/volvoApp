@@ -207,8 +207,9 @@ test('Aspecto: las preferencias guardadas se leen sin confiar en ellas', () => {
   assert.deepEqual(parsePrefs('no es json'), DEFAULT_PREFS);
   assert.deepEqual(parsePrefs('42'), DEFAULT_PREFS);
   assert.deepEqual(parsePrefs('{"mode":"neón","view":"x"}'), DEFAULT_PREFS);
-  assert.deepEqual(parsePrefs('{"mode":"dark","view":"minimal","extra":1}'), { mode: 'dark', view: 'minimal' });
-  assert.deepEqual(parsePrefs(serializePrefs({ mode: 'light', view: 'full' })), { mode: 'light', view: 'full' });
+  assert.deepEqual(parsePrefs('{"mode":"dark","view":"minimal","edges":"wide","extra":1}'), { mode: 'dark', view: 'minimal', edges: 'wide' });
+  assert.deepEqual(parsePrefs('{"mode":"dark","view":"minimal"}'), { mode: 'dark', view: 'minimal', edges: 'normal' }, 'lo guardado antes de existir «bordes» sigue valiendo');
+  assert.deepEqual(parsePrefs(serializePrefs({ mode: 'light', view: 'full', edges: 'wide' })), { mode: 'light', view: 'full', edges: 'wide' });
 });
 
 test('Aspecto: el aviso del modo automático dice a qué hora cambia', () => {
@@ -373,3 +374,24 @@ test('Sensores: la navegación tiene tres vistas separadas', () => {
 });
 
 type PhoneAvailabilityMic = 'pending' | 'granted' | 'denied' | 'unavailable';
+
+import { MIN_INSETS, WIDE_EXTRA, screenInsets } from '../insets.ts';
+
+test('Bordes: sin muesca igual queda un margen mínimo (esquinas redondeadas)', () => {
+  assert.deepEqual(screenInsets({ top: 0, bottom: 0, left: 0, right: 0 }, 'normal'), MIN_INSETS);
+});
+
+test('Bordes: se respeta lo que reporta el sistema cuando es mayor que el mínimo', () => {
+  const i = screenInsets({ top: 59, bottom: 34, left: 47, right: 47 }, 'normal');
+  assert.deepEqual(i, { top: 59, bottom: 34, left: 47, right: 47 });
+});
+
+test('Bordes: «amplios» suma un margen extra a todo, también al sistema', () => {
+  const raw = { top: 47, bottom: 34, left: 0, right: 0 };
+  const normal = screenInsets(raw, 'normal');
+  const wide = screenInsets(raw, 'wide');
+  assert.equal(wide.top, normal.top + WIDE_EXTRA.top);
+  assert.equal(wide.bottom, normal.bottom + WIDE_EXTRA.bottom);
+  assert.equal(wide.left, MIN_INSETS.left + WIDE_EXTRA.left);
+  assert.ok(wide.right > normal.right);
+});
