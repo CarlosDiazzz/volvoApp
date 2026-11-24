@@ -341,3 +341,35 @@ test('Teléfono: el historial guarda lo numérico y se acota', () => {
   assert.equal(noise.at(-1), 399);
   assert.equal((h as Record<string, number[]>).lux, undefined, 'lo que no se midió no se guarda');
 });
+
+import { STATE_TEXT, TABS, buildSensorRows } from '../sensorInfo.ts';
+
+test('Sensores: la vista lista todos y dice cuáles viajan al sistema y cuáles solo se ven en el teléfono', () => {
+  const rows = buildSensorRows(readings(), ALL, true);
+  const sent = rows.filter((r) => r.sent).map((r) => r.id);
+  assert.deepEqual(sent, ['vibration', 'magnet', 'light', 'battery'], 'solo los cuatro del contrato viajan cifrados');
+  for (const id of ['noise', 'gyro', 'tilt', 'pressure']) assert.equal(rows.find((r) => r.id === id)!.sent, false, id);
+  assert.equal(rows.length, 8);
+});
+
+test('Sensores: lo que el equipo no tiene se muestra como no disponible, no se oculta', () => {
+  const rows = buildSensorRows(readings({ lux: null }), { ...ALL, light: false }, true);
+  assert.equal(rows.find((r) => r.id === 'light')!.state, 'unavailable');
+  assert.equal(STATE_TEXT.unavailable, 'No disponible');
+});
+
+test('Sensores: el micrófono no se enciende solo y explica cada estado', () => {
+  const noise = (enabled: boolean, mic: PhoneAvailabilityMic, db: number | null) => buildSensorRows(readings({ noiseDb: db }), { ...ALL, mic }, enabled).find((r) => r.id === 'noise')!;
+  assert.equal(noise(false, 'granted', 60).state, 'off');
+  assert.equal(noise(true, 'denied', null).state, 'denied');
+  assert.match(noise(true, 'denied', null).value, /Permite el micrófono/);
+  assert.equal(noise(true, 'pending', null).state, 'pending');
+  assert.equal(noise(true, 'granted', null).state, 'waiting');
+  assert.equal(noise(true, 'granted', 61.4).value, '≈ 61 dB');
+});
+
+test('Sensores: la navegación tiene tres vistas separadas', () => {
+  assert.deepEqual(TABS.map((t) => t.id), ['inicio', 'sensores', 'ajustes']);
+});
+
+type PhoneAvailabilityMic = 'pending' | 'granted' | 'denied' | 'unavailable';
