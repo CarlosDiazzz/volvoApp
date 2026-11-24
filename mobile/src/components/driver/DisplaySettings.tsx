@@ -57,7 +57,7 @@ export function DisplaySettings({ visible, prefs, now, onChange, onClose }: {
           {prefs.mode === 'auto' && <Text style={styles.hint}>{autoHint(new Date(now))}</Text>}
           <Segmented<ViewPref> label="Información" value={prefs.view} options={VIEW_LABEL} onChange={(view) => onChange({ ...prefs, view })} styles={styles} />
           <Text style={styles.hint}>
-            {prefs.view === 'minimal' ? 'Solo el número grande y su estado, ideal para verlo de lejos.' : 'Número, medidor, estados y tendencia de cada componente.'}
+            {prefs.view === 'minimal' ? 'Solo el número grande y su estado, ideal para verlo de lejos.' : 'Además del número: medidor, estados, detalle y la gráfica de tendencia de cada componente.'}
           </Text>
           <Pressable accessibilityRole="button" onPress={onClose} style={styles.done}>
             <Text style={styles.doneText}>Listo</Text>

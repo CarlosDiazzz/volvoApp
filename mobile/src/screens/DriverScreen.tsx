@@ -1,17 +1,14 @@
 import { activateKeepAwakeAsync, deactivateKeepAwake } from 'expo-keep-awake';
 import * as ScreenOrientation from 'expo-screen-orientation';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Pressable, SafeAreaView, StyleSheet, Text, View } from 'react-native';
 
 import { AlertBanner } from '../components/driver/AlertBanner';
 import { DriverStatusBar } from '../components/driver/DriverStatusBar';
 import { SensorSlider } from '../components/driver/SensorSlider';
-import { NotoSans_200ExtraLight } from '@expo-google-fonts/noto-sans/200ExtraLight';
-import { NotoSans_300Light } from '@expo-google-fonts/noto-sans/300Light';
-import { useFonts } from 'expo-font';
-
 import { DisplaySettings } from '../components/driver/DisplaySettings';
-import { DriverColorsContext, fontsOf, paletteOf, type DriverColors } from '../components/driver/driverTheme';
+import { DriverColorsContext, driverFonts as fonts, paletteOf, type DriverColors } from '../components/driver/driverTheme';
+import { isTap } from '../domain/driver/carousel.ts';
 import { CONTROLS_HIDE_AFTER_S, MODE_LABEL, nextMode, resolveMode } from '../domain/driver/appearance.ts';
 import { useDriverPrefs } from '../hooks/useDriverPrefs';
 import { alertsOf, buildCards } from '../domain/driver/catalog.ts';
@@ -32,8 +29,6 @@ export function DriverScreen({ onExit }: { onExit: () => void }) {
   const [controls, setControls] = useState(false);
   const [touchedAt, setTouchedAt] = useState(0);
   const [prefs, setPrefs] = useDriverPrefs();
-  const [fontsLoaded] = useFonts({ NotoSans_200ExtraLight, NotoSans_300Light });
-  const fonts = fontsOf(fontsLoaded);
   const source = useMemo(() => createSimulatedSource({ profile }), [profile]);
   const { snapshot, history, now, online } = useDriverTelemetry(source);
   const cards = useMemo(() => (snapshot ? buildCards(profile, snapshot, history) : []), [profile, snapshot, history]);
@@ -54,6 +49,8 @@ export function DriverScreen({ onExit }: { onExit: () => void }) {
   const styles = useMemo(() => makeStyles(colors), [colors]);
 
   const touch = useCallback(() => setTouchedAt(Date.now()), []);
+  // Solo un TOQUE muestra u oculta los controles: un deslizamiento (cambiar de componente) no debe desplegar la barra.
+  const touchStart = useRef<{ x: number; y: number; t: number } | null>(null);
   const toggleControls = () => {
     touch();
     setControls((v) => !v);
@@ -76,7 +73,17 @@ export function DriverScreen({ onExit }: { onExit: () => void }) {
     <DriverColorsContext.Provider value={colors}>
       <SafeAreaView style={styles.root}>
         {snapshot && (
-          <Pressable style={styles.fill} onPress={toggleControls} accessibilityLabel="Pantalla del modo conductor. Toca para mostrar u ocultar los controles">
+          <View
+            style={styles.fill}
+            onTouchStart={(e) => {
+              touchStart.current = { x: e.nativeEvent.pageX, y: e.nativeEvent.pageY, t: Date.now() };
+            }}
+            onTouchEnd={(e) => {
+              const start = touchStart.current;
+              touchStart.current = null;
+              if (start && isTap(start, { x: e.nativeEvent.pageX, y: e.nativeEvent.pageY, t: Date.now() })) toggleControls();
+            }}
+          >
             <SensorSlider
               cards={cards}
               index={Math.min(index, cards.length - 1)}
@@ -89,7 +96,12 @@ export function DriverScreen({ onExit }: { onExit: () => void }) {
               fonts={fonts}
               showControls={controls}
             />
-          </Pressable>
+          </View>
+        )}
+
+        {/* Para lector de pantalla (VoiceOver): un botón que muestra u oculta los controles. */}
+        {snapshot && (
+          <Pressable accessibilityRole="button" accessibilityLabel="Mostrar u ocultar los controles" onPress={toggleControls} style={styles.a11y} />
         )}
 
         {/* Siempre visible, aunque los controles estén ocultos: el origen de los datos y si hay señal. */}
@@ -150,6 +162,7 @@ const makeStyles = (c: DriverColors) =>
   StyleSheet.create({
     root: { flex: 1, backgroundColor: c.bg },
     fill: { flex: 1 },
+    a11y: { position: 'absolute', top: 0, left: 0, width: 44, height: 44 },
     top: { position: 'absolute', top: 0, left: 0, right: 0 },
     banner: { paddingHorizontal: 16, paddingTop: 8 },
     tag: { position: 'absolute', top: 10, right: 20, flexDirection: 'row', alignItems: 'center', gap: 6, opacity: 0.85 },

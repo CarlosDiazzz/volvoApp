@@ -2,7 +2,7 @@
 
 export type ModePref = 'auto' | 'light' | 'dark';
 export type Mode = 'light' | 'dark';
-/** `full`: valor, medidor, estados y tendencia. `minimal`: solo el número grande (estilo StandBy). */
+/** `minimal`: solo el número grande (estilo StandBy). `full`: además medidor, estados, detalle y gráfica de tendencia. */
 export type ViewPref = 'full' | 'minimal';
 
 export interface DriverPrefs {
@@ -10,7 +10,8 @@ export interface DriverPrefs {
   view: ViewPref;
 }
 
-export const DEFAULT_PREFS: DriverPrefs = { mode: 'auto', view: 'full' };
+/** Por defecto, solo números: las gráficas y el detalle aparecen si el usuario pide información más detallada en los ajustes. */
+export const DEFAULT_PREFS: DriverPrefs = { mode: 'auto', view: 'minimal' };
 
 /** Automático: claro de día, carbón de noche, según la hora LOCAL del teléfono. */
 export const LIGHT_FROM_HOUR = 7;
@@ -44,7 +45,7 @@ export function parsePrefs(raw: string | null | undefined): DriverPrefs {
 export const serializePrefs = (p: DriverPrefs): string => JSON.stringify({ mode: p.mode, view: p.view });
 
 export const MODE_LABEL: Record<ModePref, string> = { auto: 'Automático', light: 'Claro', dark: 'Carbón' };
-export const VIEW_LABEL: Record<ViewPref, string> = { full: 'Completa', minimal: 'Solo números' };
+export const VIEW_LABEL: Record<ViewPref, string> = { minimal: 'Solo números', full: 'Detallada' };
 
 /** Texto que explica qué hará el modo automático ahora mismo. */
 export function autoHint(at: Date): string {

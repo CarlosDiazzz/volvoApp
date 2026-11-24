@@ -5,7 +5,7 @@ import { LEVEL_TEXT, type Card } from '../../domain/driver/catalog.ts';
 import type { ViewPref } from '../../domain/driver/appearance.ts';
 import { DriverIcon } from './DriverIcon';
 import { Sparkline } from './Sparkline';
-import { levelChipOf, levelColorOf, useDriverColors, type DriverColors, type DriverFonts } from './driverTheme';
+import { levelColorOf, useDriverColors, type DriverColors, type DriverFonts } from './driverTheme';
 
 export function formatAge(iso: string | null, now: number): string {
   if (!iso) return 'sin lecturas';
@@ -25,7 +25,7 @@ export function SensorCard({ card, now, height, view, fonts }: { card: Card; now
   const minimal = view === 'minimal';
   const compact = height < 300;
   const accent = levelColorOf(c)[card.level];
-  const chip = levelChipOf(c)[card.level];
+  const chipText = card.level === 'warn' ? c.warn : card.level === 'crit' ? c.crit : c.muted;
   // Más grande cuanto menos hay alrededor: en «solo números» el valor llena la tarjeta.
   const valueSize = Math.max(64, Math.min(minimal ? 340 : 230, height * (minimal ? 0.62 : 0.46)));
   const captionColor = card.level === 'warn' ? c.warn : card.level === 'crit' ? c.crit : card.level === 'unknown' ? c.muted : c.text;
@@ -41,9 +41,9 @@ export function SensorCard({ card, now, height, view, fonts }: { card: Card; now
         <Text style={styles.title} numberOfLines={1}>
           {card.title}
         </Text>
-        <View style={[styles.chip, { backgroundColor: chip.bg }]}>
-          {(card.level === 'warn' || card.level === 'crit') && <DriverIcon name="alert" size={14} color={chip.fg} />}
-          <Text style={[styles.chipText, { color: chip.fg }]}>{LEVEL_TEXT[card.level]}</Text>
+        <View style={[styles.chip, card.level !== 'ok' && { borderColor: `${accent}66` }]}>
+          <View style={[styles.chipDot, { backgroundColor: accent }]} />
+          <Text style={[styles.chipText, { color: chipText }]}>{LEVEL_TEXT[card.level]}</Text>
         </View>
       </View>
 
@@ -118,8 +118,10 @@ const makeStyles = (c: DriverColors) =>
     cardCompact: { paddingHorizontal: 28, paddingTop: 10, paddingBottom: 26, gap: 4 },
     head: { flexDirection: 'row', alignItems: 'center', gap: 10 },
     title: { flex: 1, color: c.muted, fontSize: 15, fontWeight: '500', letterSpacing: 1.6, textTransform: 'uppercase' },
-    chip: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 12, paddingVertical: 5, borderRadius: 999 },
-    chipText: { fontSize: 13, fontWeight: '600', letterSpacing: 0.4 },
+    // Estado sobrio: un punto y una palabra; solo los avisos llevan un borde fino del color del nivel.
+    chip: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 12, paddingVertical: 5, borderRadius: 999, borderWidth: 1, borderColor: 'transparent' },
+    chipDot: { width: 7, height: 7, borderRadius: 4 },
+    chipText: { fontSize: 13, fontWeight: '500', letterSpacing: 0.6 },
     body: { flex: 1, justifyContent: 'center', gap: 6 },
     value: { color: c.text, letterSpacing: -2, fontVariant: ['tabular-nums'] },
     unit: { color: c.muted, letterSpacing: 0 },

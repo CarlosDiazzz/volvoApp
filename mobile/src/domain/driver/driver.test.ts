@@ -223,3 +223,40 @@ test('Aspecto: el botón rápido recorre automático → claro → carbón → a
   assert.equal(nextMode('light'), 'dark');
   assert.equal(nextMode('dark'), 'auto');
 });
+
+import { REPEAT, actualOf, isTap, nearestVirtual, recenter, startVirtual } from './carousel.ts';
+
+test('Carrusel: se empieza en el bloque central y el componente real no cambia', () => {
+  for (const n of [1, 2, 6, 7]) for (let i = 0; i < n; i++) assert.equal(actualOf(startVirtual(n, i), n), i);
+  assert.equal(startVirtual(6, 0), Math.floor(REPEAT / 2) * 6);
+});
+
+test('Carrusel: es infinito, al pasar el último se vuelve al primero (y al revés)', () => {
+  const n = 6;
+  assert.equal(actualOf(startVirtual(n, n - 1) + 1, n), 0);
+  assert.equal(actualOf(startVirtual(n, 0) - 1, n), n - 1);
+});
+
+test('Carrusel: cerca de un borde salta al centro sin cambiar de componente', () => {
+  const n = 6;
+  for (let v = 0; v < REPEAT * n; v++) {
+    const r = recenter(v, n);
+    assert.equal(actualOf(r, n), actualOf(v, n), `v=${v}`);
+    assert.ok(r >= n && r < (REPEAT - 1) * n, `v=${v} → ${r} debe quedar en la banda central`);
+  }
+  assert.equal(recenter(startVirtual(n, 2), n), startVirtual(n, 2));
+});
+
+test('Carrusel: ir a un componente toma el camino más corto', () => {
+  const n = 6;
+  const from = startVirtual(n, 5); // en el último
+  assert.equal(nearestVirtual(from, n, 0), from + 1); // el siguiente es el primero: un paso adelante, no cinco atrás
+  assert.equal(nearestVirtual(startVirtual(n, 0), n, 5), startVirtual(n, 0) - 1);
+  assert.equal(nearestVirtual(from, n, 5), from);
+});
+
+test('Carrusel: un deslizamiento no cuenta como toque', () => {
+  assert.equal(isTap({ x: 100, y: 100, t: 0 }, { x: 103, y: 102, t: 120 }), true);
+  assert.equal(isTap({ x: 100, y: 100, t: 0 }, { x: 240, y: 104, t: 150 }), false, 'se movió: es un swipe');
+  assert.equal(isTap({ x: 100, y: 100, t: 0 }, { x: 101, y: 100, t: 900 }), false, 'pulsación larga');
+});

@@ -110,14 +110,11 @@ export const levelChipOf = (c: DriverColors): Record<Level, { bg: string; fg: st
 });
 
 /**
- * Tipografía: números muy finos y grandes (Noto Sans ExtraLight) para el estilo «StandBy». Si la fuente aún no cargó, se usa la
- * del sistema con peso fino: la pantalla nunca queda sin texto.
+ * Tipografía: la fuente del sistema, que en iOS es San Francisco (SF Pro), sin familia explícita. Los números van en peso fino
+ * (Thin/Light) y con cifras tabulares, que es el estilo del reloj y de StandBy del iPhone. En Android se usa Roboto.
  */
 export interface DriverFonts {
-  numeral: { fontFamily?: string; fontWeight: '200' | '300' };
-  light: { fontFamily?: string; fontWeight: '300' };
+  numeral: { fontWeight: '200' };
+  light: { fontWeight: '300' };
 }
-export const fontsOf = (loaded: boolean): DriverFonts =>
-  loaded
-    ? { numeral: { fontFamily: 'NotoSans_200ExtraLight', fontWeight: '200' }, light: { fontFamily: 'NotoSans_300Light', fontWeight: '300' } }
-    : { numeral: { fontWeight: '200' }, light: { fontWeight: '300' } };
+export const driverFonts: DriverFonts = { numeral: { fontWeight: '200' }, light: { fontWeight: '300' } };
