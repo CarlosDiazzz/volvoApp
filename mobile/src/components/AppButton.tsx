@@ -1,6 +1,6 @@
 import { Pressable, StyleSheet, Text } from 'react-native';
 
-import { colors } from './theme';
+import { useThemedStyles, type Theme } from '../theme';
 
 interface Props {
   label: string;
@@ -11,23 +11,41 @@ interface Props {
 }
 
 export function AppButton({ label, onPress, disabled, danger, selected }: Props) {
+  const styles = useThemedStyles(makeStyles);
   return (
     <Pressable
       accessibilityRole="button"
       accessibilityState={{ disabled: !!disabled, selected: !!selected }}
       onPress={onPress}
       disabled={disabled}
-      style={[styles.button, danger && styles.danger, selected && styles.selected, disabled && styles.disabled]}
+      style={({ pressed }) => [
+        styles.button,
+        danger && styles.danger,
+        selected && styles.selected,
+        pressed && styles.pressed,
+        disabled && styles.disabled,
+      ]}
     >
-      <Text style={styles.label}>{label}</Text>
+      <Text style={[styles.label, danger && styles.dangerLabel, selected && styles.selectedLabel]}>{label}</Text>
     </Pressable>
   );
 }
 
-const styles = StyleSheet.create({
-  button: { backgroundColor: colors.primary, paddingVertical: 12, paddingHorizontal: 16, borderRadius: 10, minHeight: 44, justifyContent: 'center' },
-  danger: { backgroundColor: colors.danger },
-  selected: { backgroundColor: colors.selected },
-  disabled: { opacity: 0.4 },
-  label: { color: colors.text, fontWeight: '600' },
-});
+const makeStyles = (t: Theme) =>
+  StyleSheet.create({
+    button: {
+      backgroundColor: t.colors.primary,
+      paddingVertical: t.space[5],
+      paddingHorizontal: t.space[6],
+      borderRadius: t.radius.md,
+      minHeight: 44,
+      justifyContent: 'center',
+    },
+    pressed: { opacity: 0.8 },
+    danger: { backgroundColor: t.colors.error },
+    selected: { backgroundColor: t.colors.accent },
+    disabled: { opacity: 0.4 },
+    label: { ...t.type.button, color: t.colors.onPrimary },
+    dangerLabel: { color: t.colors.onError },
+    selectedLabel: { color: t.colors.onAccent },
+  });

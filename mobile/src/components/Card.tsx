@@ -1,17 +1,27 @@
 import type { ReactNode } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 
-import { colors, layout } from './theme';
+import { useThemedStyles, type Theme } from '../theme';
 
 export function Card({ title, children }: { title: string; children: ReactNode }) {
+  const styles = useThemedStyles(makeStyles);
   return (
     <View style={styles.card}>
-      <Text style={layout.subtitle}>{title}</Text>
+      <Text style={styles.title}>{title}</Text>
       {children}
     </View>
   );
 }
 
-const styles = StyleSheet.create({
-  card: { backgroundColor: colors.card, borderRadius: 12, padding: 14, gap: 6 },
-});
+const makeStyles = (t: Theme) =>
+  StyleSheet.create({
+    card: {
+      backgroundColor: t.colors.bg,
+      borderColor: t.colors.borderSubtle,
+      borderWidth: StyleSheet.hairlineWidth,
+      borderRadius: t.radius.lg,
+      padding: t.space[6],
+      gap: t.space[4],
+    },
+    title: { ...t.type.subtitle1, color: t.colors.text },
+  });

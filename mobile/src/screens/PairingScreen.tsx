@@ -3,7 +3,8 @@ import { useRef, useState } from 'react';
 import { SafeAreaView, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 
 import { AppButton } from '../components/AppButton';
-import { layout } from '../components/theme';
+import { BrandLogo } from '../components/BrandLogo';
+import { useLayout, useTheme, useThemedStyles, type Theme } from '../theme';
 
 interface Props {
   error: string;
@@ -19,6 +20,9 @@ export function PairingScreen({ error, busy, onPair, onScan, onDriverMode }: Pro
   const [manual, setManual] = useState(false);
   const [draft, setDraft] = useState('');
   const handled = useRef(false);
+  const theme = useTheme();
+  const layout = useLayout();
+  const styles = useThemedStyles(makeStyles);
 
   const startScan = async () => {
     if (!permission?.granted && !(await requestPermission()).granted) return;
@@ -36,7 +40,10 @@ export function PairingScreen({ error, busy, onPair, onScan, onDriverMode }: Pro
   return (
     <SafeAreaView style={layout.root}>
       <ScrollView contentContainerStyle={layout.content}>
-        <Text style={layout.title}>Nodo sensor Volvo</Text>
+        <View style={styles.hero}>
+          <BrandLogo size={96} background={theme.dark ? 'dark' : 'light'} />
+        </View>
+        <Text style={layout.title}>Nodo sensor de carrocería</Text>
         <Text style={layout.note}>
           En el tablero, abra «Emparejar celular», elija el autobús y escanee el código QR con esta app.
         </Text>
@@ -65,7 +72,7 @@ export function PairingScreen({ error, busy, onPair, onScan, onDriverMode }: Pro
           </Text>
         )}
 
-        <Text style={layout.note} onPress={() => setManual((v) => !v)} accessibilityRole="button">
+        <Text style={layout.link} onPress={() => setManual((v) => !v)} accessibilityRole="button">
           {manual ? 'Ocultar enlace manual' : '¿No puede escanear? Pegar enlace'}
         </Text>
         {manual && (
@@ -75,6 +82,7 @@ export function PairingScreen({ error, busy, onPair, onScan, onDriverMode }: Pro
               value={draft}
               onChangeText={setDraft}
               placeholder="https://host:8443/#d=…&b=…&k=…&n=…&t=…"
+              placeholderTextColor={theme.colors.textSubtlest}
               autoCapitalize="none"
               autoCorrect={false}
               multiline
@@ -92,7 +100,18 @@ export function PairingScreen({ error, busy, onPair, onScan, onDriverMode }: Pro
   );
 }
 
-const styles = StyleSheet.create({
-  input: { backgroundColor: '#fff', borderRadius: 8, padding: 10, minHeight: 80, color: '#000' },
-  camera: { height: 320, borderRadius: 12, overflow: 'hidden', backgroundColor: '#000' },
-});
+const makeStyles = (t: Theme) =>
+  StyleSheet.create({
+    hero: { paddingVertical: t.space[6] },
+    input: {
+      ...t.type.body,
+      backgroundColor: t.colors.bg,
+      borderColor: t.colors.border,
+      borderWidth: 1,
+      borderRadius: t.radius.md,
+      padding: t.space[5],
+      minHeight: 80,
+      color: t.colors.text,
+    },
+    camera: { height: 320, borderRadius: t.radius.lg, overflow: 'hidden', backgroundColor: t.brand.black },
+  });
