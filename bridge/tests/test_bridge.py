@@ -110,9 +110,47 @@ def test_ws_flujo_completo(tmp_path):
         ws.send_text(hello())
         assert ws.receive_json() == {"ok": True}
         ws.send_text(json.dumps(ENV))
-        ws.send_text(json.dumps(ENV))                       # repetida: se descarta
-        ws.send_text(envelope(device="phone-2", ctr=50))    # de otro dispositivo: se descarta
+        assert ws.receive_json() == {"ack": 42}              # confirmada: la app puede borrarla de su cola
+        ws.send_text(json.dumps(ENV))                       # repetida: no se reenvía, pero se confirma (reenvío legítimo tras reconectar)
+        assert ws.receive_json() == {"ack": 42}
+        ws.send_text(envelope(device="phone-2", ctr=50))    # de otro dispositivo: se descarta sin confirmar
     assert [p[1]["ctr"] for p in pub.sent] == [42]
+
+
+def test_ws_confirmaciones_para_la_cola_del_celular(tmp_path):
+    c, pub, _ = make_client(tmp_path)
+    with c.websocket_connect("/ws") as ws:
+        ws.send_text(hello())
+        ws.receive_json()
+        for ctr in (1, 2, 3):
+            ws.send_text(envelope(ctr=ctr))
+            assert ws.receive_json() == {"ack": ctr}
+        ws.send_text(envelope(ctr=2))                       # reenvío de lo ya entregado
+        assert ws.receive_json() == {"ack": 2}
+    assert [p[1]["ctr"] for p in pub.sent] == [1, 2, 3]
+
+
+def test_ws_broker_caido_responde_nack_y_no_corta_al_celular(tmp_path):
+    c, pub, _ = make_client(tmp_path)
+    pub.ok = False
+    with c.websocket_connect("/ws") as ws:
+        ws.send_text(hello())
+        ws.receive_json()
+        for ctr in range(1, 11):                            # el broker caído no es culpa del celular (dentro de la ráfaga permitida)
+            ws.send_text(envelope(ctr=ctr))
+            assert ws.receive_json() == {"nack": ctr, "reason": "unavailable"}
+        pub.ok = True
+        ws.send_text(envelope(ctr=1))
+        assert ws.receive_json() == {"ack": 1}              # la misma muestra se acepta cuando vuelve el broker
+    assert [p[1]["ctr"] for p in pub.sent] == [1]
+
+
+def test_relay_ex_devuelve_el_contador_solo_si_el_sobre_es_valido():
+    svc = RelayService(FakePublisher())
+    assert svc.relay_ex("phone-1", envelope(ctr=7)) == (Outcome.FORWARDED, 7)
+    assert svc.relay_ex("phone-1", envelope(ctr=7)) == (Outcome.REPLAY, 7)
+    assert svc.relay_ex("phone-1", "basura") == (Outcome.BAD_SCHEMA, None)
+    assert svc.relay_ex("phone-1", envelope(device="phone-2", ctr=1)) == (Outcome.DEVICE_MISMATCH, None)
 
 
 def test_ws_token_falso_y_bloqueo(tmp_path):
@@ -179,3 +217,10 @@ def test_cabeceras_y_salud(tmp_path):
     r = c.get("/healthz")
     assert r.json()["status"] == "UP"
     assert "default-src 'none'" in r.headers["content-security-policy"]
+
+
+def test_solo_lo_que_es_culpa_del_celular_cuenta_para_el_corte():
+    """Con el broker caído o tras reconectar el celular reenvía sin parar: eso no debe cortarlo."""
+    from app.api.websocket import MAX_REJECTED, MAX_REPLAYS
+
+    assert MAX_REJECTED == 50 and MAX_REPLAYS >= MAX_REJECTED

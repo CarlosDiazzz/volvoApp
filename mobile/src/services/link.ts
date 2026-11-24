@@ -1,4 +1,4 @@
-import type { Envelope } from '../domain/envelope';
+import { parseBridgeReply, type BridgeReply } from '../domain/queue';
 import type { Pairing } from '../domain/pairing';
 
 export type LinkState = 'connecting' | 'ready' | 'down' | 'denied' | 'blocked';
@@ -18,10 +18,12 @@ export class Link {
   private timer: ReturnType<typeof setTimeout> | null = null;
   private readonly pairing: Pairing;
   private readonly onState: (s: LinkState) => void;
+  private readonly onReply: (r: Exclude<BridgeReply, null>) => void;
 
-  constructor(pairing: Pairing, onState: (s: LinkState) => void) {
+  constructor(pairing: Pairing, onState: (s: LinkState) => void, onReply: (r: Exclude<BridgeReply, null>) => void = () => undefined) {
     this.pairing = pairing;
     this.onState = onState;
+    this.onReply = onReply;
   }
 
   start(): void {
@@ -37,10 +39,10 @@ export class Link {
     this.set('down');
   }
 
-  /** Devuelve false si el enlace no está listo (la muestra ya consumió su contador y se descarta). */
-  send(envelope: Envelope): boolean {
+  /** Envía un sobre ya serializado. false si el enlace no está listo: la muestra sigue en la cola y se reintenta. */
+  sendRaw(json: string): boolean {
     if (this.state !== 'ready' || !this.ws) return false;
-    this.ws.send(JSON.stringify(envelope));
+    this.ws.send(json);
     return true;
   }
 
@@ -55,9 +57,14 @@ export class Link {
     this.ws = ws;
     ws.onopen = () => ws.send(JSON.stringify({ hello: { device: this.pairing.device, token: this.pairing.token } }));
     ws.onmessage = (e) => {
-      if (typeof e.data === 'string' && e.data.includes('"ok":true')) {
+      if (typeof e.data !== 'string') return;
+      const reply = parseBridgeReply(e.data);
+      if (reply === null) return;
+      if (reply.kind === 'ok') {
         this.retryMs = 1000;
         this.set('ready');
+      } else {
+        this.onReply(reply);
       }
     };
     ws.onerror = () => undefined; // el cierre posterior decide el estado

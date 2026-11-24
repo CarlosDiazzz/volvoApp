@@ -32,17 +32,21 @@ class RelayService:
         self._last_ctr: dict[str, int] = {}
 
     def relay(self, authenticated_device: str, raw: str) -> Outcome:
+        return self.relay_ex(authenticated_device, raw)[0]
+
+    def relay_ex(self, authenticated_device: str, raw: str) -> tuple[Outcome, int | None]:
+        """Igual que `relay`, pero devuelve también el contador (cuando el sobre es válido) para confirmar al celular."""
         if len(raw) > MAX_MESSAGE_CHARS:
-            return Outcome.BAD_SCHEMA
+            return Outcome.BAD_SCHEMA, None
         try:
             envelope = Envelope.model_validate_json(raw)
         except ValidationError:
-            return Outcome.BAD_SCHEMA
+            return Outcome.BAD_SCHEMA, None
         if envelope.device != authenticated_device:
-            return Outcome.DEVICE_MISMATCH
+            return Outcome.DEVICE_MISMATCH, None
         if envelope.ctr <= self._last_ctr.get(envelope.device, -1):
-            return Outcome.REPLAY
+            return Outcome.REPLAY, envelope.ctr
         if not self._publisher.publish(envelope.topic(self._prefix), envelope.model_dump_json().encode()):
-            return Outcome.UNAVAILABLE
+            return Outcome.UNAVAILABLE, envelope.ctr
         self._last_ctr[envelope.device] = envelope.ctr
-        return Outcome.FORWARDED
+        return Outcome.FORWARDED, envelope.ctr

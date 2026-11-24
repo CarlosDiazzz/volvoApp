@@ -132,3 +132,62 @@ test('parseRedeemed valida estrictamente la respuesta del servidor y arma el enl
   assert.equal(link, `https://10.35.11.211:8443/#d=phone-2&b=BUS-7700&k=${'a'.repeat(64)}&n=${'b'.repeat(8)}&t=${'c'.repeat(48)}`);
   assert.deepEqual(parsePairing(link)?.host, '10.35.11.211:8443'); // el puente usa su propio puerto, no el del tablero
 });
+
+// --- cola de envío con entrega confirmada ---------------------------------------------------
+import { SendQueue, parseBridgeReply } from './queue.ts';
+
+const item = (ctr: number) => ({ ctr, json: `{"v":1,"ctr":${ctr}}` });
+
+test('SendQueue envía en orden, solo borra con ack y reenvía lo no confirmado tras reconectar', () => {
+  const q = new SendQueue();
+  for (const c of [1, 2, 3, 4]) assert.equal(q.enqueue(item(c)), true);
+  let cursor = -1;
+  const sent: number[] = [];
+  for (let i = 0; i < 3; i++) {
+    const n = q.next(cursor)!;
+    sent.push(n.ctr);
+    cursor = n.ctr;
+  }
+  assert.deepEqual(sent, [1, 2, 3]);
+  assert.equal(q.inFlight(cursor), 3);
+  assert.equal(q.ack(2), 2); // acumulativo: confirma 1 y 2
+  assert.equal(q.length, 2);
+  // se corta el enlace: el cursor de la conexión se reinicia y se reenvía desde lo no confirmado
+  assert.equal(q.next(-1)!.ctr, 3);
+  assert.equal(q.ack(4), 2);
+  assert.equal(q.length, 0);
+});
+
+test('SendQueue exige contadores crecientes y descarta las más antiguas si se desborda (contándolas)', () => {
+  const q = new SendQueue(3);
+  assert.equal(q.enqueue(item(5)), true);
+  assert.equal(q.enqueue(item(5)), false); // repetido
+  assert.equal(q.enqueue(item(4)), false); // fuera de orden
+  assert.equal(q.enqueue(item(-1)), false);
+  assert.equal(q.enqueue({ ctr: 1.5, json: '{}' }), false);
+  for (const c of [6, 7, 8, 9]) q.enqueue(item(c));
+  assert.equal(q.length, 3);
+  assert.equal(q.dropped, 2);
+  assert.equal(q.oldestCtr, 7);
+});
+
+test('SendQueue se respalda y restaura; un respaldo dañado se ignora sin romper', () => {
+  const q = new SendQueue(10);
+  for (const c of [10, 11, 12]) q.enqueue(item(c));
+  q.ack(10);
+  const back = SendQueue.restore(q.serialize(), 10);
+  assert.equal(back.length, 2);
+  assert.equal(back.oldestCtr, 11);
+  for (const bad of [null, undefined, '', 'no json', '[]', '{"v":2,"items":[]}', '{"v":1,"items":"x"}', '{"v":1,"items":[{"ctr":"1","json":"{}"},{"ctr":3,"json":"' + 'x'.repeat(3000) + '"}]}']) {
+    assert.equal(SendQueue.restore(bad as string).length, 0);
+  }
+  const mixed = SendQueue.restore('{"v":1,"dropped":4,"items":[{"ctr":2,"json":"{}"},{"ctr":1,"json":"{}"},{"ctr":3,"json":"{}"}]}');
+  assert.deepEqual([mixed.length, mixed.dropped], [2, 4]); // el elemento fuera de orden se descarta
+});
+
+test('parseBridgeReply interpreta ok, ack y nack y descarta lo demás', () => {
+  assert.deepEqual(parseBridgeReply('{"ok":true}'), { kind: 'ok' });
+  assert.deepEqual(parseBridgeReply('{"ack":42}'), { kind: 'ack', ctr: 42 });
+  assert.deepEqual(parseBridgeReply('{"nack":7,"reason":"unavailable"}'), { kind: 'nack', ctr: 7 });
+  for (const bad of ['', 'x', '{}', '{"ack":"1"}', '{"ack":-1}', '{"ack":1.5}', '{"ok":false}', '[]']) assert.equal(parseBridgeReply(bad), null);
+});

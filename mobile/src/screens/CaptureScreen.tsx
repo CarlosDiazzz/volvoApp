@@ -38,7 +38,12 @@ export function CaptureScreen({ pairing, onUnpair }: { pairing: Pairing; onUnpai
         <Card title="Estado">
           <InfoRow label="Enlace" value={running ? LINK_LABEL[c.link] : 'detenido'} good={running && c.link === 'ready'} />
           <InfoRow label="Autobús" value={pairing.bus} />
-          <InfoRow label="Muestras enviadas" value={String(c.sent)} />
+          <InfoRow label="Muestras confirmadas" value={String(c.sent)} good={running && c.queued === 0} />
+          <InfoRow
+            label="En cola (sin confirmar)"
+            value={c.queued === 0 ? 'ninguna' : running && c.link !== 'ready' ? `${c.queued} · guardadas, sin red` : `${c.queued} · poniéndose al día`}
+          />
+          {c.dropped > 0 && <Text style={layout.error}>{c.dropped} muestras antiguas se descartaron: el corte fue más largo que la cola.</Text>}
           <InfoRow label="Batería" value={c.stats && c.stats.now >= 0 ? `${Math.round(c.stats.now * 100)} %` : 'n/d'} />
           <InfoRow label="Consumo medido" value={c.drainPerHour == null ? '—' : `${c.drainPerHour.toFixed(1)} %/h`} />
           {!!c.fault && <Text style={layout.error}>{c.fault}</Text>}

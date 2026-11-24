@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 
 import { buildPairingLink, parsePairing, parsePairingQr, type Pairing } from '../domain/pairing';
 import { PAIRING_MESSAGE, PairingError, redeemCode } from '../services/pairingApi';
+import { deleteQueue } from '../services/queueStorage';
 import { clearPairing, loadPairing, savePairing } from '../services/secureStorage';
 
 export function usePairing() {
@@ -49,7 +50,10 @@ export function usePairing() {
   }, []);
 
   const unpair = useCallback(async () => {
-    if (pairing) await clearPairing(pairing.device).catch(() => undefined);
+    if (pairing) {
+      await clearPairing(pairing.device).catch(() => undefined);
+      await deleteQueue(pairing.device); // la cola pertenece a ese emparejamiento: no se reenvía con otra clave
+    }
     setPairing(null);
   }, [pairing]);
 
