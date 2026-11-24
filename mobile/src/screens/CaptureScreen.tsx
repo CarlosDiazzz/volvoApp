@@ -2,9 +2,10 @@ import { useState } from 'react';
 import { Platform, SafeAreaView, ScrollView, Text, View } from 'react-native';
 
 import { AppButton } from '../components/AppButton';
+import { BrandHeader } from '../components/BrandHeader';
 import { Card } from '../components/Card';
 import { InfoRow } from '../components/InfoRow';
-import { layout, mono } from '../components/theme';
+import { useLayout } from '../theme';
 import type { Pairing } from '../domain/pairing';
 import { useCapture } from '../hooks/useCapture';
 import type { LinkState } from '../services/link';
@@ -23,58 +24,60 @@ export function CaptureScreen({ pairing, onUnpair }: { pairing: Pairing; onUnpai
   const [rate, setRate] = useState(1);
   const [door, setDoor] = useState(false);
   const c = useCapture(pairing, running, rate, door);
+  const layout = useLayout();
 
   const magText = !c.avail.mag ? 'no disponible' : c.live.mag == null ? 'calibre primero' : `${c.live.mag.toFixed(0)} µT`;
   const lightText = c.avail.light ? `${Math.round(c.live.lux ?? 0)} lx` : Platform.OS === 'ios' ? 'iOS no expone el sensor' : 'no disponible';
 
   return (
-    <SafeAreaView style={layout.root}>
-      <ScrollView contentContainerStyle={layout.content}>
-        <Text style={layout.title}>
-          Nodo sensor <Text style={{ fontFamily: mono }}>{pairing.device}</Text>
-        </Text>
-        <Text style={layout.note}>Nodo de referencia: solo envía sensado cifrado; no tiene acceso a datos de flota.</Text>
+    <View style={layout.root}>
+      <BrandHeader />
+      <SafeAreaView style={layout.root}>
+        <ScrollView contentContainerStyle={layout.content}>
+          <Text style={layout.title}>Nodo sensor {pairing.device}</Text>
+          <Text style={layout.note}>Nodo de referencia: solo envía sensado cifrado; no tiene acceso a datos de flota.</Text>
 
-        <Card title="Estado">
-          <InfoRow label="Enlace" value={running ? LINK_LABEL[c.link] : 'detenido'} good={running && c.link === 'ready'} />
-          <InfoRow label="Autobús" value={pairing.bus} />
-          <InfoRow label="Muestras confirmadas" value={String(c.sent)} good={running && c.queued === 0} />
-          <InfoRow
-            label="En cola (sin confirmar)"
-            value={c.queued === 0 ? 'ninguna' : running && c.link !== 'ready' ? `${c.queued} · guardadas, sin red` : `${c.queued} · poniéndose al día`}
-          />
-          {c.dropped > 0 && <Text style={layout.error}>{c.dropped} muestras antiguas se descartaron: el corte fue más largo que la cola.</Text>}
-          <InfoRow label="Batería" value={c.stats && c.stats.now >= 0 ? `${Math.round(c.stats.now * 100)} %` : 'n/d'} />
-          <InfoRow label="Consumo medido" value={c.drainPerHour == null ? '—' : `${c.drainPerHour.toFixed(1)} %/h`} />
-          {!!c.fault && <Text style={layout.error}>{c.fault}</Text>}
-        </Card>
+          <Card title="Estado">
+            <InfoRow label="Enlace" value={running ? LINK_LABEL[c.link] : 'detenido'} good={running && c.link === 'ready'} />
+            <InfoRow label="Autobús" value={pairing.bus} />
+            <InfoRow label="Muestras confirmadas" value={String(c.sent)} good={running && c.queued === 0} />
+            <InfoRow
+              label="En cola (sin confirmar)"
+              value={c.queued === 0 ? 'ninguna' : running && c.link !== 'ready' ? `${c.queued} · guardadas, sin red` : `${c.queued} · poniéndose al día`}
+            />
+            {c.dropped > 0 && <Text style={layout.error}>{c.dropped} muestras antiguas se descartaron: el corte fue más largo que la cola.</Text>}
+            <InfoRow label="Batería" value={c.stats && c.stats.now >= 0 ? `${Math.round(c.stats.now * 100)} %` : 'n/d'} />
+            <InfoRow label="Consumo medido" value={c.drainPerHour == null ? '—' : `${c.drainPerHour.toFixed(1)} %/h`} />
+            {!!c.fault && <Text style={layout.error}>{c.fault}</Text>}
+          </Card>
 
-        <Card title="Sensores → variable de carrocería">
-          <InfoRow label="Vibración → compresor A/C" value={c.avail.accel ? `${c.live.vib.toFixed(3)} g` : 'no disponible'} />
-          <InfoRow label="Campo magnético → puerta" value={magText} />
-          <InfoRow label="Luz → iluminación interior" value={lightText} />
-        </Card>
+          <Card title="Sensores → variable de carrocería">
+            <InfoRow label="Vibración → compresor A/C" value={c.avail.accel ? `${c.live.vib.toFixed(3)} g` : 'no disponible'} />
+            <InfoRow label="Campo magnético → puerta" value={magText} />
+            <InfoRow label="Luz → iluminación interior" value={lightText} />
+          </Card>
 
-        <View style={layout.rowButtons}>
-          <AppButton label={running ? 'Detener' : 'Iniciar'} onPress={() => setRunning((r) => !r)} danger={running} />
-          <AppButton label={c.calibrating ? 'Calibrando…' : 'Calibrar imán'} onPress={c.calibrate} disabled={!running || c.calibrating || !c.avail.mag} />
-        </View>
-        <View style={layout.rowButtons}>
-          <AppButton label={`Puerta: ${door ? 'abierta' : 'cerrada'}`} onPress={() => setDoor((d) => !d)} disabled={!running} />
-        </View>
+          <View style={layout.rowButtons}>
+            <AppButton label={running ? 'Detener' : 'Iniciar'} onPress={() => setRunning((r) => !r)} danger={running} />
+            <AppButton label={c.calibrating ? 'Calibrando…' : 'Calibrar imán'} onPress={c.calibrate} disabled={!running || c.calibrating || !c.avail.mag} />
+          </View>
+          <View style={layout.rowButtons}>
+            <AppButton label={`Puerta: ${door ? 'abierta' : 'cerrada'}`} onPress={() => setDoor((d) => !d)} disabled={!running} />
+          </View>
 
-        <Text style={layout.subtitle}>Frecuencia de envío</Text>
-        <View style={layout.rowButtons}>
-          {RATES.map((r) => (
-            <AppButton key={r} label={`${r} Hz`} onPress={() => setRate(r)} selected={r === rate} />
-          ))}
-        </View>
+          <Text style={layout.subtitle}>Frecuencia de envío</Text>
+          <View style={layout.rowButtons}>
+            {RATES.map((r) => (
+              <AppButton key={r} label={`${r} Hz`} onPress={() => setRate(r)} selected={r === rate} />
+            ))}
+          </View>
 
-        <AppButton label="Desemparejar este celular" onPress={onUnpair} danger />
-        <Text style={layout.note}>
-          Cada muestra se cifra en el celular (AES-256-GCM): el puente y el broker no pueden leerla ni alterarla. No se capturan imágenes ni audio.
-        </Text>
-      </ScrollView>
-    </SafeAreaView>
+          <AppButton label="Desemparejar este celular" onPress={onUnpair} danger />
+          <Text style={layout.note}>
+            Cada muestra se cifra en el celular (AES-256-GCM): el puente y el broker no pueden leerla ni alterarla. No se capturan imágenes ni audio.
+          </Text>
+        </ScrollView>
+      </SafeAreaView>
+    </View>
   );
 }
