@@ -1,13 +1,45 @@
+import { createContext, useContext } from 'react';
+
 import type { Level } from '../../domain/driver/catalog.ts';
+import type { Mode } from '../../domain/driver/appearance.ts';
 
 /**
- * Tema del modo conductor: identidad de Volvo en tema claro (en su mayoría blanco), igual que la pantalla del tablero.
- * Tipografía del sistema (SF Pro en iOS, Roboto en Android): es la que exige CarPlay y la más legible al manejar.
+ * Dos paletas del modo conductor. «Carbón» es negro cálido profundo (no negro puro: cansa menos y deja ver las sombras);
+ * «Claro» es el blanco de Volvo. Los colores de nivel se re-escogen en cada modo para conservar el contraste, no se invierten.
  */
-export const driverColors = {
+export interface DriverColors {
+  mode: Mode;
+  volvoBlue: string;
+  accent: string;
+  accentSoft: string;
+  accentBorder: string;
+  bg: string;
+  surface: string;
+  surface2: string;
+  line: string;
+  lineHi: string;
+  text: string;
+  muted: string;
+  ok: string;
+  okSoft: string;
+  warn: string;
+  warnStrong: string;
+  warnSoft: string;
+  warnBorder: string;
+  crit: string;
+  critSoft: string;
+  critBorder: string;
+  unknown: string;
+  shadow: string;
+  onAccent: string;
+}
+
+export const lightColors: DriverColors = {
+  mode: 'light',
   volvoBlue: '#003057',
   accent: '#284e80',
   accentSoft: '#e9eff7',
+  accentBorder: '#c4d3e6',
   bg: '#ffffff',
   surface: '#ffffff',
   surface2: '#f5f6f7',
@@ -20,23 +52,72 @@ export const driverColors = {
   warn: '#8f5200',
   warnStrong: '#e8930c',
   warnSoft: '#fff2db',
+  warnBorder: '#f2d39b',
   crit: '#b3261e',
   critSoft: '#fbe9e8',
+  critBorder: '#f0c2bf',
   unknown: '#737a84',
+  shadow: '#141414',
+  onAccent: '#ffffff',
 };
 
-/** Color de acento de cada nivel (franja de la tarjeta, medidor, punto del carrusel). */
-export const levelColor: Record<Level, string> = {
-  ok: driverColors.accent,
-  warn: driverColors.warnStrong,
-  crit: driverColors.crit,
-  unknown: driverColors.unknown,
+export const carbonColors: DriverColors = {
+  mode: 'dark',
+  volvoBlue: '#8fb4e3',
+  accent: '#8fb4e3',
+  accentSoft: '#142030',
+  accentBorder: '#243a55',
+  bg: '#0a0b0d',
+  surface: '#101215',
+  surface2: '#16191d',
+  line: '#1e2227',
+  lineHi: '#2d333a',
+  text: '#f4f5f7',
+  muted: '#8b929c',
+  ok: '#62c68c',
+  okSoft: '#0f241a',
+  warn: '#f0b43c',
+  warnStrong: '#f0b43c',
+  warnSoft: '#2a2111',
+  warnBorder: '#4a3913',
+  crit: '#ff6f64',
+  critSoft: '#2d1512',
+  critBorder: '#5a2a25',
+  unknown: '#6c727b',
+  shadow: '#000000',
+  onAccent: '#0a0b0d',
 };
 
-/** Insignia del nivel: fondo y texto con contraste suficiente sobre blanco. */
-export const levelChip: Record<Level, { bg: string; fg: string }> = {
-  ok: { bg: driverColors.okSoft, fg: driverColors.ok },
-  warn: { bg: driverColors.warnStrong, fg: '#141414' },
-  crit: { bg: driverColors.crit, fg: '#ffffff' },
-  unknown: { bg: driverColors.surface2, fg: driverColors.muted },
-};
+export const paletteOf = (mode: Mode): DriverColors => (mode === 'dark' ? carbonColors : lightColors);
+
+export const DriverColorsContext = createContext<DriverColors>(lightColors);
+export const useDriverColors = (): DriverColors => useContext(DriverColorsContext);
+
+/** Color de acento de cada nivel (franja, medidor, punto del carrusel). */
+export const levelColorOf = (c: DriverColors): Record<Level, string> => ({
+  ok: c.accent,
+  warn: c.warnStrong,
+  crit: c.crit,
+  unknown: c.unknown,
+});
+
+/** Insignia del nivel, con contraste suficiente sobre el fondo de cada modo. */
+export const levelChipOf = (c: DriverColors): Record<Level, { bg: string; fg: string }> => ({
+  ok: { bg: c.okSoft, fg: c.ok },
+  warn: { bg: c.warnStrong, fg: '#141414' },
+  crit: { bg: c.crit, fg: c.mode === 'dark' ? '#190806' : '#ffffff' },
+  unknown: { bg: c.surface2, fg: c.muted },
+});
+
+/**
+ * Tipografía: números muy finos y grandes (Noto Sans ExtraLight) para el estilo «StandBy». Si la fuente aún no cargó, se usa la
+ * del sistema con peso fino: la pantalla nunca queda sin texto.
+ */
+export interface DriverFonts {
+  numeral: { fontFamily?: string; fontWeight: '200' | '300' };
+  light: { fontFamily?: string; fontWeight: '300' };
+}
+export const fontsOf = (loaded: boolean): DriverFonts =>
+  loaded
+    ? { numeral: { fontFamily: 'NotoSans_200ExtraLight', fontWeight: '200' }, light: { fontFamily: 'NotoSans_300Light', fontWeight: '300' } }
+    : { numeral: { fontWeight: '200' }, light: { fontWeight: '300' } };

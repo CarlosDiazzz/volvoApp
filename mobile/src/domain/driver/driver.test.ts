@@ -182,3 +182,36 @@ test('catálogo: tendencia desde el historial y avisos del más grave al menos g
     ['tank', 'compressor'],
   );
 });
+
+import { DEFAULT_PREFS, autoHint, parsePrefs, resolveMode, serializePrefs } from './appearance.ts';
+
+test('Aspecto: el modo automático es claro de día y carbón de noche (hora local)', () => {
+  const at = (h: number, m = 0) => new Date(2026, 10, 24, h, m);
+  assert.equal(resolveMode('auto', at(6, 59)), 'dark');
+  assert.equal(resolveMode('auto', at(7)), 'light');
+  assert.equal(resolveMode('auto', at(12)), 'light');
+  assert.equal(resolveMode('auto', at(18, 59)), 'light');
+  assert.equal(resolveMode('auto', at(19)), 'dark');
+  assert.equal(resolveMode('auto', at(0)), 'dark');
+});
+
+test('Aspecto: elegir claro u oscuro manda sobre la hora', () => {
+  const noche = new Date(2026, 10, 24, 23);
+  const dia = new Date(2026, 10, 24, 12);
+  assert.equal(resolveMode('light', noche), 'light');
+  assert.equal(resolveMode('dark', dia), 'dark');
+});
+
+test('Aspecto: las preferencias guardadas se leen sin confiar en ellas', () => {
+  assert.deepEqual(parsePrefs(null), DEFAULT_PREFS);
+  assert.deepEqual(parsePrefs('no es json'), DEFAULT_PREFS);
+  assert.deepEqual(parsePrefs('42'), DEFAULT_PREFS);
+  assert.deepEqual(parsePrefs('{"mode":"neón","view":"x"}'), DEFAULT_PREFS);
+  assert.deepEqual(parsePrefs('{"mode":"dark","view":"minimal","extra":1}'), { mode: 'dark', view: 'minimal' });
+  assert.deepEqual(parsePrefs(serializePrefs({ mode: 'light', view: 'full' })), { mode: 'light', view: 'full' });
+});
+
+test('Aspecto: el aviso del modo automático dice a qué hora cambia', () => {
+  assert.match(autoHint(new Date(2026, 10, 24, 12)), /19:00/);
+  assert.match(autoHint(new Date(2026, 10, 24, 22)), /7:00/);
+});

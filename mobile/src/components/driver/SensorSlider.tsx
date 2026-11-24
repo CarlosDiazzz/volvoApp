@@ -1,16 +1,20 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { FlatList, Pressable, StyleSheet, View, type LayoutRectangle } from 'react-native';
 
 import { LEVEL_TEXT, type Card } from '../../domain/driver/catalog.ts';
 import { DriverIcon } from './DriverIcon';
 import { SensorCard } from './SensorCard';
-import { driverColors as c, levelColor } from './driverTheme';
+import type { ViewPref } from '../../domain/driver/appearance.ts';
+import { levelColorOf, useDriverColors, type DriverColors, type DriverFonts } from './driverTheme';
 
 /**
  * Carrusel de componentes: una tarjeta por página. Se cambia deslizando, con las flechas grandes o con los puntos,
  * que llevan el color del nivel de cada componente (el conductor ve de un vistazo cuál requiere atención).
  */
-export function SensorSlider({ cards, index, onIndexChange, now }: { cards: Card[]; index: number; onIndexChange: (i: number) => void; now: number }) {
+export function SensorSlider({ cards, index, onIndexChange, now, view, fonts }: { cards: Card[]; index: number; onIndexChange: (i: number) => void; now: number; view: ViewPref; fonts: DriverFonts }) {
+  const c = useDriverColors();
+  const styles = useMemo(() => makeStyles(c), [c]);
+  const levelColor = levelColorOf(c);
   const list = useRef<FlatList<Card>>(null);
   const [box, setBox] = useState<LayoutRectangle | null>(null);
   const last = cards.length - 1;
@@ -40,7 +44,7 @@ export function SensorSlider({ cards, index, onIndexChange, now }: { cards: Card
                 style={{ width: box.width, height: box.height, paddingHorizontal: box.width * 0.06, paddingVertical: 6 }}
                 accessibilityLabel={`${i + 1} de ${cards.length}`}
               >
-                <SensorCard card={item} now={now} height={box.height} />
+                <SensorCard card={item} now={now} height={box.height} view={view} fonts={fonts} />
               </View>
             )}
           />
@@ -93,7 +97,8 @@ export function SensorSlider({ cards, index, onIndexChange, now }: { cards: Card
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (c: DriverColors) =>
+  StyleSheet.create({
   root: { flex: 1, gap: 8 },
   viewport: { flex: 1 },
   nav: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 24 },
