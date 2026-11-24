@@ -2,6 +2,7 @@ import { activateKeepAwakeAsync, deactivateKeepAwake } from 'expo-keep-awake';
 import { useEffect, useRef, useState } from 'react';
 
 import { BlockCounter } from '../domain/counter';
+import { Deadband } from '../domain/deadband';
 import { encryptSample } from '../domain/envelope';
 import { luxToPct } from '../domain/measure';
 import type { Pairing } from '../domain/pairing';
@@ -28,17 +29,20 @@ const SAVE_MS = 3000;
  * y solo las borra cuando el puente las confirma: si se corta la red, nada se pierde y al reconectar se pone al día.
  * Toda la lógica de decisión vive en `domain`; aquí solo se conectan las piezas.
  */
-export function useCapture(pairing: Pairing, running: boolean, rate: number, door: boolean) {
+export function useCapture(pairing: Pairing, running: boolean, rate: number, door: boolean, saver = false) {
   const sensors = useSensors(running);
   const battery = useBattery(running);
   const [link, setLink] = useState<LinkState>('down');
   const [sent, setSent] = useState(0); // confirmadas por el puente
   const [queued, setQueued] = useState(0); // pendientes de confirmar
   const [dropped, setDropped] = useState(0); // descartadas por desborde de la cola
+  const [omitted, setOmitted] = useState(0); // no enviadas por la banda muerta (ahorro de energía)
   const [live, setLive] = useState<LiveValues>({ vib: 0, mag: null, lux: null });
   const [fault, setFault] = useState('');
   const doorRef = useRef(door);
   doorRef.current = door;
+  const saverRef = useRef(saver);
+  saverRef.current = saver;
   const { avail, vibration, magnet, lux } = sensors;
   const batteryLevel = battery.level;
 
@@ -49,6 +53,8 @@ export function useCapture(pairing: Pairing, running: boolean, rate: number, doo
     let queue = new SendQueue();
     let cursor = -1; // último contador enviado EN ESTA conexión (al reconectar se reinicia y se reenvía lo no confirmado)
     let dirty = false;
+    const deadband = new Deadband();
+    setOmitted(0);
     const refresh = () => {
       setQueued(queue.length);
       setDropped(queue.dropped);
@@ -81,14 +87,20 @@ export function useCapture(pairing: Pairing, running: boolean, rate: number, doo
       const luxNow = lux.current;
       setLive({ vib, mag, lux: luxNow });
       try {
-        const ctr = await counter.next();
-        const sample = buildSample(Date.now(), {
+        const now = Date.now();
+        const readings = {
           light: luxNow == null ? null : luxToPct(luxNow),
           vib: avail.accel ? vib : null,
           mag: avail.mag ? mag : null,
           door: doorRef.current,
-          battery: batteryLevel.current,
-        });
+        };
+        // Banda muerta: si nada cambió lo bastante (y no toca latido) no se gasta ni un contador ni radio. Se decide ANTES de reservar el contador.
+        if (saverRef.current && !deadband.shouldSend(now, readings)) {
+          setOmitted(deadband.skipped);
+          return;
+        }
+        const ctr = await counter.next();
+        const sample = buildSample(now, { ...readings, battery: batteryLevel.current });
         if (alive && queue.enqueue({ ctr, json: JSON.stringify(encryptSample(pairing, ctr, sample)) })) {
           dirty = true;
           refresh();
@@ -138,5 +150,5 @@ export function useCapture(pairing: Pairing, running: boolean, rate: number, doo
     };
   }, [running, pairing, rate, avail, vibration, magnet, lux, batteryLevel]);
 
-  return { ...sensors, ...battery, link, sent, queued, dropped, live, fault };
+  return { ...sensors, ...battery, link, sent, queued, dropped, omitted, live, fault };
 }
