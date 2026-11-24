@@ -3,12 +3,13 @@
     "name": "Volvo Nodo Sensor",
     "slug": "volvo-sensor-node",
     "version": "1.0.0",
-    "orientation": "portrait",
+    "orientation": "default",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "dark",
     "ios": {
       "supportsTablet": false,
-      "bundleIdentifier": "mx.volvo.hackatec.sensornode"
+      "bundleIdentifier": "mx.volvo.hackatec.sensornode",
+      "requireFullScreen": true
     },
     "android": {
       "adaptiveIcon": {
@@ -37,7 +38,14 @@
           "motionPermission": "Se usa el movimiento del equipo para medir vibración y enviarla al sistema de telemetría."
         }
       ],
-      "./plugins/withDevCaTrust"
+      "./plugins/withDevCaTrust",
+      [
+        "expo-audio",
+        {
+          "microphonePermission": "Se usa el micrófono solo para medir el nivel de ruido en el modo conductor. El audio no se graba ni se envía: solo se calcula un número.",
+          "recordAudioAndroid": true
+        }
+      ]
     ]
   }
 }

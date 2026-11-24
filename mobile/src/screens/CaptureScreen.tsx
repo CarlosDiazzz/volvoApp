@@ -19,7 +19,7 @@ const LINK_LABEL: Record<LinkState, string> = {
   blocked: 'bloqueado temporalmente',
 };
 
-export function CaptureScreen({ pairing, onUnpair }: { pairing: Pairing; onUnpair: () => void }) {
+export function CaptureScreen({ pairing, onUnpair, onDriverMode }: { pairing: Pairing; onUnpair: () => void; onDriverMode: () => void }) {
   const [running, setRunning] = useState(false);
   const [rate, setRate] = useState(1);
   const [door, setDoor] = useState(false);
@@ -37,6 +37,9 @@ export function CaptureScreen({ pairing, onUnpair }: { pairing: Pairing; onUnpai
         <ScrollView contentContainerStyle={layout.content}>
           <Text style={layout.title}>Nodo sensor {pairing.device}</Text>
           <Text style={layout.note}>Nodo de referencia: solo envía sensado cifrado; no tiene acceso a datos de flota.</Text>
+
+          {/* Arriba y siempre visible: con el nodo emparejado el modo conductor debe seguir a un toque, sin desplazarse. */}
+          <AppButton label="Abrir modo conductor" onPress={onDriverMode} />
 
           <Card title="Estado">
             <InfoRow label="Enlace" value={running ? LINK_LABEL[c.link] : 'detenido'} good={running && c.link === 'ready'} />
@@ -91,7 +94,7 @@ export function CaptureScreen({ pairing, onUnpair }: { pairing: Pairing; onUnpai
 
           <AppButton label="Desemparejar este celular" onPress={onUnpair} danger />
           <Text style={layout.note}>
-            Cada muestra se cifra en el celular (AES-256-GCM): el puente y el broker no pueden leerla ni alterarla. No se capturan imágenes ni audio.
+            Cada muestra se cifra en el celular (AES-256-GCM): el puente y el broker no pueden leerla ni alterarla. No se capturan imágenes. El micrófono solo se usa en el modo conductor para medir un nivel de ruido: el audio no se graba ni se envía.
           </Text>
         </ScrollView>
       </SafeAreaView>
