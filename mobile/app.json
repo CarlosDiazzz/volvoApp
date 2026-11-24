@@ -1,0 +1,37 @@
+{
+  "expo": {
+    "name": "Volvo Nodo Sensor",
+    "slug": "volvo-sensor-node",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "dark",
+    "ios": {
+      "supportsTablet": false,
+      "bundleIdentifier": "mx.volvo.hackatec.sensornode"
+    },
+    "android": {
+      "adaptiveIcon": {
+        "backgroundColor": "#E6F4FE",
+        "foregroundImage": "./assets/android-icon-foreground.png",
+        "backgroundImage": "./assets/android-icon-background.png",
+        "monochromeImage": "./assets/android-icon-monochrome.png"
+      },
+      "predictiveBackGestureEnabled": false,
+      "package": "mx.volvo.hackatec.sensornode"
+    },
+    "web": {
+      "favicon": "./assets/favicon.png"
+    },
+    "plugins": [
+      "expo-secure-store",
+      [
+        "expo-sensors",
+        {
+          "motionPermission": "Se usa el movimiento del equipo para medir vibración y enviarla al sistema de telemetría."
+        }
+      ],
+      "./plugins/withDevCaTrust"
+    ]
+  }
+}

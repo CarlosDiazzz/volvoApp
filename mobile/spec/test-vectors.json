@@ -1,0 +1,64 @@
+{
+  "spec": "sample-envelope v1",
+  "master_key_hex": "000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f",
+  "auth_secret": "ssssssssssssssssssssssssssssssssssssssss",
+  "vectors": [
+    {
+      "device": "phone-1",
+      "bus": "BUS-7700",
+      "ctr": 0,
+      "key_hex": "bd2ab99cd34505f602514745834969fa4b03bdcf3cde28234a6a9934df4905f1",
+      "nonce_prefix_hex": "b830be11",
+      "nonce_hex": "b830be110000000000000000",
+      "aad_hex": "0170686f6e652d31004255532d37373030000000000000000000",
+      "auth_token": "145ea43d8607447aa784e9f18a13c41c2cd90f094a066864",
+      "plaintext": "{\"door_manual\":false,\"ts\":1795511805000}",
+      "ct_b64": "i96dexeoNxetZeHzmcGmdBiuQ5Vo+piZGUn4ZjH/agSnIpis8XLWNpfddCqjyi25qGZ36c3rcT4=",
+      "envelope": {
+        "v": 1,
+        "device": "phone-1",
+        "bus": "BUS-7700",
+        "ctr": 0,
+        "ct": "i96dexeoNxetZeHzmcGmdBiuQ5Vo+piZGUn4ZjH/agSnIpis8XLWNpfddCqjyi25qGZ36c3rcT4="
+      }
+    },
+    {
+      "device": "phone-1",
+      "bus": "BUS-7700",
+      "ctr": 42,
+      "key_hex": "bd2ab99cd34505f602514745834969fa4b03bdcf3cde28234a6a9934df4905f1",
+      "nonce_prefix_hex": "b830be11",
+      "nonce_hex": "b830be11000000000000002a",
+      "aad_hex": "0170686f6e652d31004255532d3737303000000000000000002a",
+      "auth_token": "145ea43d8607447aa784e9f18a13c41c2cd90f094a066864",
+      "plaintext": "{\"battery_pct\":81.0,\"door_manual\":true,\"light_pct\":55.5,\"mag_delta\":71.2,\"noise_db\":48.0,\"ts\":1795511806000,\"vib_rms\":0.0123}",
+      "ct_b64": "S7Izdb945F+GtZ5EF0jY3rL/sa/CK0kz7ki9eu3DNDJ6KXxFojTq/CtCXBQ/tlgY8NIPOHK5Oe41Z+Ookh2ZB4B1KEPpJfpaf0gGAHWxMfIIFMPdGWgcBxSnU7EpRTM56jQLrWMDHRukB8heNrOB+KA/kTA3QVcybbiayc0bTjeTj2rbrMguoo5TMg07",
+      "envelope": {
+        "v": 1,
+        "device": "phone-1",
+        "bus": "BUS-7700",
+        "ctr": 42,
+        "ct": "S7Izdb945F+GtZ5EF0jY3rL/sa/CK0kz7ki9eu3DNDJ6KXxFojTq/CtCXBQ/tlgY8NIPOHK5Oe41Z+Ookh2ZB4B1KEPpJfpaf0gGAHWxMfIIFMPdGWgcBxSnU7EpRTM56jQLrWMDHRukB8heNrOB+KA/kTA3QVcybbiayc0bTjeTj2rbrMguoo5TMg07"
+      }
+    },
+    {
+      "device": "phone-2",
+      "bus": "BUS-7700",
+      "ctr": 1099511627783,
+      "key_hex": "34f2603019bf23128526cd2f9713077031b5b43e69974645300f533765a7f280",
+      "nonce_prefix_hex": "5a3eadbf",
+      "nonce_hex": "5a3eadbf0000010000000007",
+      "aad_hex": "0170686f6e652d32004255532d37373030000000010000000007",
+      "auth_token": "daa97ca555e523c2aef61c1c7a08cd175ff5de8bb229dc08",
+      "plaintext": "{\"ts\":1795511807000,\"vib_rms\":1.5}",
+      "ct_b64": "8JE5T21oU+QiovDbUXNctWpxltXnOQmmJ5xkdetAs04F3YtZg46U7rP8zHoRUQ0l1lw=",
+      "envelope": {
+        "v": 1,
+        "device": "phone-2",
+        "bus": "BUS-7700",
+        "ctr": 1099511627783,
+        "ct": "8JE5T21oU+QiovDbUXNctWpxltXnOQmmJ5xkdetAs04F3YtZg46U7rP8zHoRUQ0l1lw="
+      }
+    }
+  ]
+}
