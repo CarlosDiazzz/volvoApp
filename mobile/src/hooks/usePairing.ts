@@ -1,12 +1,14 @@
 import { useCallback, useEffect, useState } from 'react';
 
-import { parsePairing, type Pairing } from '../domain/pairing';
+import { buildPairingLink, parsePairing, parsePairingQr, type Pairing } from '../domain/pairing';
+import { PAIRING_MESSAGE, PairingError, redeemCode } from '../services/pairingApi';
 import { clearPairing, loadPairing, savePairing } from '../services/secureStorage';
 
 export function usePairing() {
   const [pairing, setPairing] = useState<Pairing | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [busy, setBusy] = useState(false);
 
   useEffect(() => {
     loadPairing()
@@ -27,10 +29,29 @@ export function usePairing() {
     setPairing(parsed);
   }, []);
 
+  /** Escaneo del QR del tablero: canjea el código de un solo uso y guarda las credenciales en el almacén seguro. */
+  const pairFromQr = useCallback(async (text: string) => {
+    const qr = parsePairingQr(text);
+    if (!qr) return setError('Ese QR no es de emparejamiento de Volvo. Use el que muestra el tablero (Emparejar celular).');
+    setBusy(true);
+    try {
+      const link = buildPairingLink(qr.host, await redeemCode(qr));
+      const parsed = parsePairing(link);
+      if (!parsed) return setError(PAIRING_MESSAGE.server);
+      await savePairing(link);
+      setError('');
+      setPairing(parsed);
+    } catch (e) {
+      setError(e instanceof PairingError ? PAIRING_MESSAGE[e.kind] : 'No se pudo guardar el emparejamiento de forma segura.');
+    } finally {
+      setBusy(false);
+    }
+  }, []);
+
   const unpair = useCallback(async () => {
     if (pairing) await clearPairing(pairing.device).catch(() => undefined);
     setPairing(null);
   }, [pairing]);
 
-  return { pairing, loading, error, pair, unpair };
+  return { pairing, loading, error, busy, pair, pairFromQr, unpair };
 }
