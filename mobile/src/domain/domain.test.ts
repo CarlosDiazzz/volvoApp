@@ -191,3 +191,57 @@ test('parseBridgeReply interpreta ok, ack y nack y descarta lo demás', () => {
   assert.deepEqual(parseBridgeReply('{"nack":7,"reason":"unavailable"}'), { kind: 'nack', ctr: 7 });
   for (const bad of ['', 'x', '{}', '{"ack":"1"}', '{"ack":-1}', '{"ack":1.5}', '{"ok":false}', '[]']) assert.equal(parseBridgeReply(bad), null);
 });
+
+import { Deadband, DEFAULT_DEADBAND } from './deadband.ts';
+
+test('Deadband: la primera lectura y un cambio de puerta se envían siempre', () => {
+  const d = new Deadband();
+  assert.equal(d.shouldSend(0, { vib: 0.01, mag: 10, light: 50, door: false }), true);
+  assert.equal(d.shouldSend(100, { vib: 0.01, mag: 10, light: 50, door: false }), false);
+  assert.equal(d.shouldSend(200, { vib: 0.01, mag: 10, light: 50, door: true }), true);
+});
+
+test('Deadband: lo que cambia menos que la banda se omite y se cuenta', () => {
+  const d = new Deadband();
+  d.shouldSend(0, { vib: 0.01, mag: 10, light: 50, door: false });
+  assert.equal(d.shouldSend(500, { vib: 0.02, mag: 20, light: 53, door: false }), false);
+  assert.equal(d.skipped, 1);
+});
+
+test('Deadband: cada sensor que supera su banda dispara el envío', () => {
+  const base = { vib: 0.01, mag: 10, light: 50, door: false };
+  for (const change of [{ vib: 0.2 }, { mag: 60 }, { light: 70 }]) {
+    const d = new Deadband();
+    d.shouldSend(0, base);
+    assert.equal(d.shouldSend(100, { ...base, ...change }), true, JSON.stringify(change));
+  }
+});
+
+test('Deadband: compara con lo último enviado, así un cambio lento acaba enviándose', () => {
+  const d = new Deadband();
+  d.shouldSend(0, { vib: 0, mag: 0, light: 50, door: false });
+  let sent = 0;
+  for (let i = 1; i <= 10; i++) {
+    if (d.shouldSend(i * 100, { vib: 0, mag: 0, light: 50 + i, door: false })) sent++; // +1 punto por paso: 6 supera la banda de 5
+  }
+  assert.ok(sent >= 1, 'un deslizamiento sostenido debe acabar superando el umbral');
+});
+
+test('Deadband: el latido garantiza una muestra aunque nada cambie', () => {
+  const d = new Deadband();
+  const r = { vib: 0, mag: 5, light: 40, door: false };
+  d.shouldSend(0, r);
+  assert.equal(d.shouldSend(DEFAULT_DEADBAND.heartbeatMs - 1, r), false);
+  assert.equal(d.shouldSend(DEFAULT_DEADBAND.heartbeatMs, r), true);
+  assert.ok(DEFAULT_DEADBAND.heartbeatMs < 5000, 'el latido debe ser menor que el hueco mínimo de la confiabilidad (5 s)');
+});
+
+test('Deadband: un sensor que aparece o desaparece es un cambio; reset reinicia', () => {
+  const d = new Deadband();
+  d.shouldSend(0, { vib: 0, mag: null, light: null, door: false });
+  assert.equal(d.shouldSend(100, { vib: 0, mag: null, light: null, door: false }), false);
+  assert.equal(d.shouldSend(200, { vib: 0, mag: 12, light: null, door: false }), true);
+  d.reset();
+  assert.equal(d.skipped, 0);
+  assert.equal(d.shouldSend(300, { vib: 0, mag: 12, light: null, door: false }), true);
+});

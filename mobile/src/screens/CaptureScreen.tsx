@@ -22,7 +22,8 @@ export function CaptureScreen({ pairing, onUnpair }: { pairing: Pairing; onUnpai
   const [running, setRunning] = useState(false);
   const [rate, setRate] = useState(1);
   const [door, setDoor] = useState(false);
-  const c = useCapture(pairing, running, rate, door);
+  const [saver, setSaver] = useState(false);
+  const c = useCapture(pairing, running, rate, door, saver);
 
   const magText = !c.avail.mag ? 'no disponible' : c.live.mag == null ? 'calibre primero' : `${c.live.mag.toFixed(0)} µT`;
   const lightText = c.avail.light ? `${Math.round(c.live.lux ?? 0)} lx` : Platform.OS === 'ios' ? 'iOS no expone el sensor' : 'no disponible';
@@ -45,7 +46,11 @@ export function CaptureScreen({ pairing, onUnpair }: { pairing: Pairing; onUnpai
           />
           {c.dropped > 0 && <Text style={layout.error}>{c.dropped} muestras antiguas se descartaron: el corte fue más largo que la cola.</Text>}
           <InfoRow label="Batería" value={c.stats && c.stats.now >= 0 ? `${Math.round(c.stats.now * 100)} %` : 'n/d'} />
-          <InfoRow label="Consumo medido" value={c.drainPerHour == null ? '—' : `${c.drainPerHour.toFixed(1)} %/h`} />
+          <InfoRow
+            label={`Consumo medido (${saver ? 'ahorro activo' : 'envío continuo'})`}
+            value={c.drainPerHour == null ? 'midiendo… (≥ 2 min)' : `${c.drainPerHour.toFixed(1)} %/h`}
+          />
+          {saver && <InfoRow label="Omitidas por ahorro" value={`${c.omitted} (sin cambios)`} />}
           {!!c.fault && <Text style={layout.error}>{c.fault}</Text>}
         </Card>
 
@@ -62,6 +67,18 @@ export function CaptureScreen({ pairing, onUnpair }: { pairing: Pairing; onUnpai
         <View style={layout.rowButtons}>
           <AppButton label={`Puerta: ${door ? 'abierta' : 'cerrada'}`} onPress={() => setDoor((d) => !d)} disabled={!running} />
         </View>
+
+        <View style={layout.rowButtons}>
+          <AppButton
+            label={`Ahorro de energía: ${saver ? 'activado' : 'apagado'}`}
+            onPress={() => setSaver((s) => !s)}
+            selected={saver}
+          />
+        </View>
+        <Text style={layout.note}>
+          Con el ahorro activado solo se envía cuando algo cambia o cada 4 s como latido. Para comparar el consumo, deja cada modo al menos
+          10 min con la pantalla igual y mira «Consumo medido»; el contador se reinicia al cambiar de modo si detienes e inicias la captura.
+        </Text>
 
         <Text style={layout.subtitle}>Frecuencia de envío</Text>
         <View style={layout.rowButtons}>
