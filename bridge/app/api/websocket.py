@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import asyncio
 import collections
+import json
 
 from fastapi import WebSocket, WebSocketDisconnect
 from pydantic import BaseModel, ConfigDict, Field, ValidationError
@@ -14,6 +15,8 @@ from ..security.auth import FailureGuard, TokenBucket, verify
 
 HELLO_TIMEOUT_S = 5
 MAX_REJECTED = 50
+# Un celular con cola reenvía lo no confirmado al reconectar: esas repeticiones son normales (se confirman) pero se acotan.
+MAX_REPLAYS = 200
 CLOSE_DENIED, CLOSE_BLOCKED, CLOSE_FLOOD = 4401, 4429, 4400
 
 
@@ -65,12 +68,20 @@ class DeviceEndpoint:
         try:
             while True:
                 raw = await ws.receive_text()
-                outcome = self._relay.relay(device, raw) if bucket.allow() else Outcome.BAD_SCHEMA
+                outcome, ctr = self._relay.relay_ex(device, raw) if bucket.allow() else (Outcome.BAD_SCHEMA, None)
                 if outcome is Outcome.FORWARDED:
                     forwarded += 1
+                    await ws.send_text(json.dumps({"ack": ctr}))
                     continue
                 rejected[outcome.value] += 1
-                if sum(rejected.values()) >= MAX_REJECTED:
+                # Confirmaciones al celular (cola de reenvío): ya entregada antes -> ack; broker caído -> nack (reintenta, no es culpa suya).
+                if outcome is Outcome.REPLAY and ctr is not None and rejected[outcome.value] <= MAX_REPLAYS:
+                    await ws.send_text(json.dumps({"ack": ctr}))
+                    continue
+                if outcome is Outcome.UNAVAILABLE and ctr is not None:
+                    await ws.send_text(json.dumps({"nack": ctr, "reason": "unavailable"}))
+                    continue
+                if sum(v for k, v in rejected.items() if k not in (Outcome.REPLAY.value, Outcome.UNAVAILABLE.value)) >= MAX_REJECTED:
                     self._audit.write("device_cut", ip=ip, device=device, reason="too_many_rejections")
                     return await ws.close(code=CLOSE_FLOOD)
         except WebSocketDisconnect:
