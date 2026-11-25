@@ -155,7 +155,8 @@ test('catálogo: umbrales y recomendaciones de cada componente', () => {
   assert.equal(card('9800-foraneo', 'compressor', { vibration_rms: VIBRATION.warn }).level, 'warn');
   assert.equal(card('9800-foraneo', 'ac_performance', { compressor_on: false, cabin_temp: AC.hotCabin }).level, 'crit');
   assert.equal(card('9800-foraneo', 'lighting_circuit', { current: 4.4 }).caption, 'Consumo bajo: posible lámpara fundida');
-  assert.equal(card('9800-foraneo', 'tank', { tank_level: TANK.warn }).caption, 'Vaciar en la próxima terminal');
+  assert.equal(card('9800-foraneo', 'tank', { flushes_since_empty: TANK.warn }).caption, 'Vaciar en la próxima terminal (~12 usos más)');
+  assert.equal(card('9800-foraneo', 'tank', { flushes_since_empty: 30 }).value, '~30');
   assert.equal(card('7800e-biarticulado', 'door_service', { door_cycles: DOOR_SERVICE.interval }).value, 'Vencido');
   assert.equal(card('7800e-biarticulado', 'climate_units', { unit2_on: false }).caption, 'Unidad 2 sin funcionar: reportar a mantenimiento');
   assert.equal(card('7800e-biarticulado', 'dcdc', { dcdc_on: false }).level, 'crit');
@@ -164,10 +165,10 @@ test('catálogo: umbrales y recomendaciones de cada componente', () => {
 
 test('catálogo: un sensor que no reporta se avisa y su tarjeta dice «Sin datos»', () => {
   const s = snap('9800-foraneo');
-  delete s.signals['restroom/tank_level'];
+  delete s.signals['restroom/flushes_since_empty'];
   const cards = buildCards('9800-foraneo', s);
   const sensors = cards.find((c) => c.id === 'sensors')!;
-  assert.equal(sensors.value, '13 de 14');
+  assert.equal(sensors.value, '15 de 16');
   assert.equal(sensors.level, 'warn');
   assert.equal(cards.find((c) => c.id === 'tank')!.level, 'unknown');
 });
@@ -176,7 +177,7 @@ test('catálogo: tendencia desde el historial y avisos del más grave al menos g
   const history = { 'hvac/vibration_rms': [...Array(30).fill(0.12), ...Array(10).fill(0.3)] };
   const c = buildCards('9800-foraneo', snap('9800-foraneo'), history).find((x) => x.id === 'compressor')!;
   assert.equal(c.trend?.direction, 'up');
-  const cards = buildCards('9800-foraneo', snap('9800-foraneo', { tank_level: 95, vibration_rms: VIBRATION.warn }));
+  const cards = buildCards('9800-foraneo', snap('9800-foraneo', { flushes_since_empty: 95, vibration_rms: VIBRATION.warn }));
   assert.deepEqual(
     alertsOf(cards).map((x) => x.id),
     ['tank', 'compressor'],
