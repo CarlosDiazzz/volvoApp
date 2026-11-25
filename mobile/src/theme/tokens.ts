@@ -59,17 +59,17 @@ export const light: Palette = {
   errorSubtle: '#F8DDDB',
 };
 
-/** Carbón: negro puro de fondo (en OLED el píxel se apaga), tarjetas apenas más claras y texto casi blanco. */
+/** Carbón: negro puro en fondo y tarjetas (en OLED el píxel se apaga); las separan bordes tenues, no grises. Texto casi blanco. */
 export const dark: Palette = {
-  bg: '#0B0C0D',
+  bg: '#000000',
   bgBase: '#000000',
-  bgVariant: '#16181B',
+  bgVariant: '#0D0D0E',
   text: '#F4F5F7',
   textSubtle: '#B4BAC2',
   textSubtlest: '#8B929C',
   textDisabled: '#5C626B',
-  border: '#3A4047',
-  borderSubtle: '#1D2126',
+  border: '#2C2C2F',
+  borderSubtle: '#1C1C1E',
   primary: '#FFFFFF',
   primaryPressed: '#B4BAC2',
   onPrimary: '#000000',

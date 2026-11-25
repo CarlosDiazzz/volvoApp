@@ -34,7 +34,7 @@ export function DriverStatusBar({ vehicle, busId, origin, online, now, fonts, on
       <View style={styles.brand}>
         <Image source={c.mode === 'dark' ? LOGO_BLANCO : LOGO_OSCURO} style={styles.logo} accessibilityLabel="Volvo" accessibilityIgnoresInvertColors />
         <View>
-          <Text style={styles.title}>Mantenimiento de carrocería</Text>
+          <Text style={styles.title}>VAKT · Mantenimiento de carrocería</Text>
           <Pressable
             disabled={!onSwitchModel}
             onPress={onSwitchModel}

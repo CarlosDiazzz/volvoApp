@@ -1,10 +1,10 @@
-import { Platform, StatusBar, StyleSheet, View } from 'react-native';
+import { Platform, StatusBar, StyleSheet, Text, View } from 'react-native';
 
 import { useAppearance } from '../appearance/AppearanceProvider';
 import { brand, useTheme } from '../theme';
 import { BrandLogo } from './BrandLogo';
 
-/** Banda de marca en Volvo Dark Blue con el logo blanco centrado. */
+/** Banda de marca (carbón o Volvo Dark Blue en claro) con el logo blanco y el nombre del producto, centrados. */
 export function BrandHeader() {
   const { insets } = useAppearance();
   const t = useTheme();
@@ -24,10 +24,15 @@ export function BrandHeader() {
       ]}
     >
       <BrandLogo size={40} background="dark" />
+      <Text accessibilityRole="header" style={[t.type.h4, styles.name, { color: brand.white }]}>
+        VAKT
+      </Text>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   band: { alignItems: 'center' },
+  // El margen izquierdo compensa el espaciado de la última letra para que el nombre quede centrado
+  name: { letterSpacing: 7, paddingLeft: 7, paddingBottom: 10 },
 });
