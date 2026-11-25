@@ -50,6 +50,7 @@ export function PairingScreen({ error, busy, onPair, onScan, onDriverMode }: Pro
       <ScrollView contentContainerStyle={[layout.content, padding]}>
         <View style={styles.hero}>
           <BrandLogo size={96} background={theme.dark ? 'dark' : 'light'} />
+          <Text style={[theme.type.h2, { color: theme.colors.text, letterSpacing: 10, paddingLeft: 10 }]}>VAKT</Text>
         </View>
         <Text style={layout.title}>Nodo sensor de carrocería</Text>
         <Text style={layout.note}>
