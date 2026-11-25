@@ -92,7 +92,9 @@ export const SIGNALS: Record<ProfileId, SignalDef[]> = {
     def('lighting', 'ambient_light', '%'),
     def('restroom', 'door_open'),
     def('restroom', 'occupied'),
-    def('restroom', 'tank_level', '%'),
+    def('restroom', 'entry_count'),
+    def('restroom', 'flush_count'),
+    def('restroom', 'flushes_since_empty', 'usos'),
   ],
   '7800e-biarticulado': [
     def('hvac', 'zone1_temp', 'C'),
@@ -159,7 +161,9 @@ export function initialState(profile: ProfileId): SimState {
         ambient_light: 70,
         door_open: false,
         occupied: false,
-        tank_level: 62,
+        entry_count: 1200,
+        flush_count: 1100,
+        flushes_since_empty: 40,
       },
       hidden: { doorTimer: 0 },
     };
@@ -236,9 +240,13 @@ function stepCoach(s: SimState, rnd: () => number): SimState {
   hidden.doorTimer = Math.max(0, (hidden.doorTimer ?? 0) - 1);
   v.door_open = (hidden.doorTimer ?? 0) > 0;
 
-  // El tanque se llena poco a poco; al rebasar 96 % se vacía en la terminal.
-  const tank = num(v, 'tank_level') + 0.1;
-  v.tank_level = round(tank >= 96 ? 20 : tank);
+  // Cada salida del baño es un uso con descarga; al acercarse a lleno se vacía en la terminal.
+  if (tick % 20 === 0) {
+    v.entry_count = num(v, 'entry_count') + 1;
+    v.flush_count = num(v, 'flush_count') + 1;
+    const since = num(v, 'flushes_since_empty') + 1;
+    v.flushes_since_empty = since >= 96 ? 0 : since;
+  }
 
   return { tick, values: v, hidden };
 }

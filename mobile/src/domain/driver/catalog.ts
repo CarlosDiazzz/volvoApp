@@ -95,7 +95,12 @@ export const AC = { warmCabin: 28, hotCabin: 30 };
 /** Diferencia aceptable entre el consumo medido y el esperado para las luces encendidas. */
 export const LIGHT_DEVIATION_A = 1.5;
 export const LIGHT_OVERCURRENT_A = 15;
-export const TANK = { warn: 80, crit: 92 };
+/**
+ * Tanque de desechos del sanitario del 9800: 100 L (ficha técnica de Volvo). El nodo no mide el nivel: cuenta las descargas desde el
+ * último vaciado y el llenado se ESTIMA con los litros por uso (valor de ejemplo, ajustable por cliente).
+ */
+export const TANK = { warn: 80, crit: 92, liters: 100, litersPerUse: 1 };
+export const tankPct = (usesSinceEmpty: number) => Math.min(100, ((usesSinceEmpty * TANK.litersPerUse) / TANK.liters) * 100);
 /** Intervalo de servicio de puertas (aperturas). Valor de ejemplo: ajustar al plan de mantenimiento de Volvo. */
 export const DOOR_SERVICE = { interval: 10_000, warnAt: 9_000 };
 export const ZONE_SPREAD_C = 3;
@@ -232,19 +237,25 @@ const tank: CardDef = {
   title: 'Tanque del sanitario',
   icon: 'tank',
   system: 'restroom',
-  uses: ['tank_level'],
+  uses: ['flushes_since_empty'],
   build: (r) => {
-    const p = r.num('tank_level');
+    const uses = r.num('flushes_since_empty');
+    const p = tankPct(uses);
+    const left = Math.max(0, Math.floor(((TANK.crit / 100) * TANK.liters) / TANK.litersPerUse - uses));
     const level: Level = p >= TANK.crit ? 'crit' : p >= TANK.warn ? 'warn' : 'ok';
     const caption =
-      level === 'crit' ? 'Tanque lleno: vaciar en cuanto pueda' : level === 'warn' ? 'Vaciar en la próxima terminal' : 'Nivel adecuado';
+      level === 'crit'
+        ? 'Tanque lleno: vaciar en cuanto pueda'
+        : level === 'warn'
+          ? `Vaciar en la próxima terminal (~${left} usos más)`
+          : `Alcanza para ~${left} usos más`;
     return {
-      value: fmt(p, 0),
-      unit: '%',
+      value: `~${fmt(p, 0)}`,
+      unit: '% (estimado)',
       caption,
       level,
       gauge: gauge(p, 0, 100, '%'),
-      trend: trend(r.series('tank_level'), 0.5, [0, 100]),
+      trend: trend(r.series('flushes_since_empty'), 1, [0, 100]),
     };
   },
 };
